@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: auto-park-uasd-postgres
+    environment:
+      POSTGRES_USER: user-auto-park-uasd-dev
+      POSTGRES_PASSWORD: autoparkuasd123456
+      POSTGRES_DB: auto-park-uasd-dev
+    ports:
+      - 5438:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - auto-park-uasd-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  auto-park-uasd-network:
+    driver: bridge
