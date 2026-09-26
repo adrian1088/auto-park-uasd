@@ -1,5 +1,5 @@
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { Column, Entity, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { PaymentMethod } from '../enum/payment-method.enum';
 import { User } from '../../users/entities/users.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
@@ -20,9 +20,13 @@ export class Payment extends AuditEntity {
   @Column({ type: 'enum', enum: PaymentMethod, comment: 'Payment method' })
   paymentMethod: PaymentMethod;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.payments)
   user: User;
 
-  @OneToOne(() => Ticket)
-  ticket: Ticket;
+  @OneToOne(() => Ticket, (ticket) => ticket.payment, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'ticket_id' })
+  ticket: Ticket | null;
 }

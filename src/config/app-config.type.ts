@@ -4,4 +4,5 @@ export type AppConfig = {
   description: string;
   port: number;
   apiPrefix: string;
+  swaggerPath: string;
 };

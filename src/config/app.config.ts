@@ -8,5 +8,6 @@ export default registerAs<AppConfig>('app', () => {
     description: process.env.APP_DESCRIPTION,
     port: Number(process.env.PORT) || 3000,
     apiPrefix: process.env.API_PREFIX || 'api/v1',
+    swaggerPath: process.env.APP_SWAGGER_PATH || 'docs',
   };
 });

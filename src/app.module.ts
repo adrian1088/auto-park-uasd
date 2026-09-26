@@ -13,6 +13,8 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ParkingModule } from './modules/parking/parking.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
+import { RatesModule } from './modules/rates/rates.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -28,14 +30,16 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
       envFilePath: ['.env'],
     }),
     DatabaseModule,
-    UsersModule,
+    HealthModule,
     SharedModule,
+    UsersModule,
     VehiclesModule,
     AuthModule,
     TicketsModule,
     PaymentsModule,
     ParkingModule,
     ReservationsModule,
+    RatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

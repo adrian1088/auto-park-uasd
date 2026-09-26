@@ -1,9 +1,12 @@
-import { Column, OneToOne, Entity, ManyToOne } from 'typeorm';
+import { Column, OneToOne, Entity, ManyToOne, JoinColumn } from 'typeorm';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { User } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
+import { Reservation } from '../../reservations/entities/reservation.entity';
+import { Rate } from '../../rates/entities/rate.entity';
+import { Payment } from '../../payments/entities/payment.entity';
 
 @Entity({ name: 'tickets', comment: 'Tickets table' })
 export class Ticket extends AuditEntity {
@@ -14,8 +17,8 @@ export class Ticket extends AuditEntity {
   })
   entranceAt: Date;
 
-  @Column({ type: 'timestamp', comment: 'Exit time' })
-  exitAt: Date;
+  @Column({ type: 'timestamp', nullable: true, comment: 'Exit time' })
+  exitAt: Date | null;
 
   @Column({
     type: 'enum',
@@ -33,12 +36,28 @@ export class Ticket extends AuditEntity {
   })
   amount: number;
 
-  @ManyToOne(() => Vehicle)
+  @ManyToOne(() => Vehicle, (vehicle) => vehicle.tickets)
   vehicle: Vehicle; // Muchos tickets pueden pertenecer a un solo vehículo
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.tickets)
   user: User; // Muchos tickets pueden pertenecer a un solo usuario
 
-  @ManyToOne(() => ParkingSpace)
+  @ManyToOne(() => ParkingSpace, (spot) => spot.tickets)
   spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento
+
+  @OneToOne(() => Reservation, (reservation) => reservation.ticket, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'reservation_id' })
+  reservation: Reservation | null;
+
+  @ManyToOne(() => Rate, (rate) => rate.tickets, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  rate: Rate | null;
+
+  @OneToOne(() => Payment, (payment) => payment.ticket)
+  payment: Payment | null;
 }

@@ -27,12 +27,11 @@ export class AuditLog extends AuditEntity {
   resource: string;
 
   @Column({
-    type: 'varchar',
-    length: 255,
+    type: 'int',
     nullable: true,
     comment: 'ID of the entity on which the action was performed',
   })
-  resourceId: string;
+  resourceId: number;
 
   @Column({
     type: 'jsonb',
@@ -51,6 +50,6 @@ export class AuditLog extends AuditEntity {
   })
   errorMessage: string;
 
-  @ManyToOne(()=> User)
+  @ManyToOne(() => User, (user) => user.auditLogs)
   user: User; // Muchos logs pueden pertenecer a un solo usuario
 }

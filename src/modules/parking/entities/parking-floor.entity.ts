@@ -18,7 +18,7 @@ export class ParkingFloor extends AuditEntity {
 
   // Mucho a uno: 
   // Muchos pisos de estacionamiento pertenecen a una sola ubicacion de estacionamiento
-  @ManyToOne(() => ParkingLot)
+  @ManyToOne(() => ParkingLot, (parkingLot) => parkingLot.floors)
   parkingLot: ParkingLot;
 
   // Uno a Mucho:
