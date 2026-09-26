@@ -5,7 +5,7 @@ import { User } from "../../users/entities/users.entity";
 
 @Entity({ name: 'vehicles', comment: 'Vehicles table' })
 export class Vehicle extends AuditEntity {
-    @Column({type: 'varchar', length: 20, comment: 'License plate of the vehicle'})
+    @Column({type: 'varchar', length: 20, comment: 'Plate number of the vehicle'})
     plateNumber: string;
 
     @Column({type: 'varchar', length: 255, comment: 'Make of the vehicle'})
@@ -28,5 +28,5 @@ export class Vehicle extends AuditEntity {
     ownerName: string;
 
     @ManyToOne(() => User)
-    user: User
+    user: User; // Muchos vehículos pueden pertenecer a un solo usuario
 }

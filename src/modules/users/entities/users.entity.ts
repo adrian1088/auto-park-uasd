@@ -19,7 +19,7 @@ export class User extends AuditEntity {
     default: UsersRole.USER,
     comment: 'User role',
   })
-  role: string;
+  role: UsersRole;
 
   @Column({
     type: 'enum',
@@ -27,7 +27,7 @@ export class User extends AuditEntity {
     default: UsersStatus.ACTIVE,
     comment: 'User status',
   })
-  status: string;
+  status: UsersStatus;
 
   @Column({ type: 'varchar', length: 255, comment: 'Phone number' })
   phone: string;

@@ -1,4 +1,4 @@
-export enum ParkingSpotType {
+export enum ParkingSpaceType {
   CAR = 'CAR',
   TRUCK = 'TRUCK',
   MOTORCYCLE = 'MOTORCYCLE',

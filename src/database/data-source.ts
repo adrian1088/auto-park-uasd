@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
-import { User } from '../modules/users/entities/users.entity';
 import { SnakeCaseNamingStrategy } from './snake-case-naming.strategy';
-
+console.log('hey:', __dirname + '/**/*.entity{.ts,.js}');
+console.log('hey2:', __dirname + '/migrations/*{.ts,.js}');
 export default new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -11,8 +11,8 @@ export default new DataSource({
   username: process.env.DB_USERNAME || '',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || '',
-  entities: [User],
-  migrations: [__dirname + '/migrations/*{.ts,.js}'],
+  entities: ['./dist/**/*.entity{.ts,.js}'],
+  migrations: ['./src/database/migrations/*{.ts,.js}'],
   namingStrategy: new SnakeCaseNamingStrategy(),
   migrationsTableName: 'migrations',
   synchronize: false,

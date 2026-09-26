@@ -1,5 +1,5 @@
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { Column, Entity, ManyToOne, OneToMany, OneToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToOne } from 'typeorm';
 import { PaymentMethod } from '../enum/payment-method.enum';
 import { User } from '../../users/entities/users.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';

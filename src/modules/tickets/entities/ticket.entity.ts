@@ -3,7 +3,7 @@ import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { User } from '../../users/entities/users.entity';
-import { ParkingSpot } from '../../parking/entities/parking-spot.entity';
+import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 
 @Entity({ name: 'tickets', comment: 'Tickets table' })
 export class Ticket extends AuditEntity {
@@ -12,7 +12,7 @@ export class Ticket extends AuditEntity {
     default: () => 'CURRENT_TIMESTAMP',
     comment: 'Check-in time',
   })
-  entryAt: Date;
+  entranceAt: Date;
 
   @Column({ type: 'timestamp', comment: 'Exit time' })
   exitAt: Date;
@@ -34,11 +34,11 @@ export class Ticket extends AuditEntity {
   amount: number;
 
   @ManyToOne(() => Vehicle)
-  vehicle: Vehicle;
+  vehicle: Vehicle; // Muchos tickets pueden pertenecer a un solo vehículo
 
   @ManyToOne(() => User)
-  user: User;
+  user: User; // Muchos tickets pueden pertenecer a un solo usuario
 
-  @OneToOne(() => ParkingSpot)
-  spot: ParkingSpot;
+  @ManyToOne(() => ParkingSpace)
+  spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento
 }

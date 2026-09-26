@@ -1,18 +1,14 @@
 import {
   Column,
   Entity,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
+import { User } from '../../users/entities/users.entity';
 
 @Entity({ name: 'audit_logs', comment: 'Audit Log Entity' })
 export class AuditLog extends AuditEntity {
-  @Column({
-    type: 'uuid',
-    nullable: true,
-    comment: 'User ID who performed the action',
-  })
-  userId: string | null;
-
   @Column({
     type: 'varchar',
     length: 255,
@@ -54,4 +50,7 @@ export class AuditLog extends AuditEntity {
     comment: 'Error message if the action failed',
   })
   errorMessage: string;
+
+  @ManyToOne(()=> User)
+  user: User; // Muchos logs pueden pertenecer a un solo usuario
 }

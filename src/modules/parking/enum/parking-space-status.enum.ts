@@ -1,4 +1,4 @@
-export enum ParkingSpotStatus {
+export enum ParkingSpaceStatus {
   FREE = 'FREE',
   OCCUPIED = 'OCCUPIED',
   RESERVED = 'RESERVED',

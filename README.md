@@ -1,57 +1,50 @@
-
 # Auto Park UASD
+
 ## Tabla de contenido
+
 - [Descripción](#descripción)
 - [Instalación](#instalación)
 - [Ejecutar la aplicación](#ejecutar-la-aplicación)
 - [Migraciones](#migraciones)
 - [Test](#test)
+- 
 
 ## Descripción
+
 Sistema de gestión de parqueo para la UASD.
 
 ## Instalación
 
 ```bash
-$ npm install
+npm install
 ```
 
 ## Ejecutar la aplicación
 
 ```bash
 # development
-$ npm run start
+npm run start
 
 # watch mode
-$ npm run start:dev
+npm run start:dev
 
 # production mode
-$ npm run start:prod
+npm run start:prod
 ```
 
 ## Migraciones
 
-### Crear una migración vacía
-
 ```bash
-npm run migration:create -- src/database/migrations/AddParkingTable
-```
+# Crear una migración vacía
+npm run migration:create -- src/database/migrations/<migration_name_here>
 
-### Generar una migración desde los cambios en las entidades
+# Generar una migración desde los cambios en las entidades
+npm run migration:generate -- src/database/migrations/<migration_name_here>
 
-```bash
-npm run migration:generate -- src/database/migrations/AddParkingTable
-```
-
-### Ejecutar las migraciones pendientes
-
-```bash
+# Ejecutar las migraciones pendientes
 npm run migration:run
-```
 
-### Revertir la última migración ejecutada
-
-```bash
+# Revertir la última migración ejecutada
 npm run migration:revert
 ```
 
@@ -69,4 +62,3 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
-

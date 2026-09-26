@@ -12,6 +12,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ParkingModule } from './modules/parking/parking.module';
+import { ReservationsModule } from './modules/reservations/reservations.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ParkingModule } from './modules/parking/parking.module';
     TicketsModule,
     PaymentsModule,
     ParkingModule,
+    ReservationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
