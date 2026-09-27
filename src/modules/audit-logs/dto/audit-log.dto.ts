@@ -6,34 +6,34 @@ export class AuditLogDto {
   id: number;
 
   @ApiResponseProperty({ type: Number, example: 123 })
-  userId: number;
+  userId: number | null;
 
   @ApiResponseProperty({ type: String, example: 'CREATE' })
   action: string;
 
   @ApiResponseProperty({ type: Object, example: { key: 'value' } })
-  payload: Record<string, any>;
+  payload: Record<string, unknown> | null;
 
   @ApiResponseProperty({ type: String, example: 'resource-name' })
   resource: string;
 
-  @ApiResponseProperty({ type: Number, example: 456 })
-  resourceId: number;
+  @ApiResponseProperty({ type: String, example: '456' })
+  resourceId: string | null;
 
   @ApiResponseProperty({ enum: ['SUCCESS', 'ERROR'], example: 'SUCCESS' })
   status: 'SUCCESS' | 'ERROR';
 
   @ApiResponseProperty({ type: String, example: 'Error message' })
-  errorMessage?: string;
+  errorMessage?: string | null;
 
   static fromEntity(entity: AuditLog): AuditLogDto {
     const dto = new AuditLogDto();
     dto.id = entity.id;
-    dto.userId = entity.user.id;
+    dto.userId = entity.userId ?? entity.user?.id ?? null;
     dto.action = entity.action;
     dto.payload = entity.payload;
     dto.resource = entity.resource;
-    dto.resourceId = entity.resourceId;
+    dto.resourceId = entity.resourceId ?? null;
     dto.status = entity.status;
     dto.errorMessage = entity.errorMessage;
     return dto;

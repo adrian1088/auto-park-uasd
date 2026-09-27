@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { AuditLog } from './entities/audit-log.entity';
 import { FindAuditLogDto } from './dto/find-audit-log.dto';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
+import { AuditLogDto } from './dto/audit-log.dto';
 
 @Injectable()
 export class AuditService {
@@ -17,7 +18,7 @@ export class AuditService {
     return this.repo.save(createAuditEntry);
   }
 
-  async getAll({ page, limit }: FindAuditLogDto): Promise<ResponsePaginatedDto<AuditLog>>  {
+  async getAll({ page, limit }: FindAuditLogDto): Promise<ResponsePaginatedDto<AuditLogDto>> {
     const [auditLogs, total] = await this.repo.findAndCount({
       order: {
         id: 'DESC',
@@ -26,7 +27,7 @@ export class AuditService {
       take: limit,
     });
     return ResponsePaginatedDto.fromDataAndMeta({
-      data: auditLogs,
+      data: auditLogs.map((auditLog) => AuditLogDto.fromEntity(auditLog)),
       total,
       page,
       limit,

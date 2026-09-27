@@ -7,6 +7,10 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import {
+  isAuthenticationRoute,
+  sanitizeSensitiveData,
+} from '../utils/sanitize-sensitive-data';
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
@@ -14,18 +18,20 @@ export class LoggingInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
-    const { method, url, body, user } = req;
+    const { method, body, user } = req;
+    const url: string = req.path || req.route?.path || req.url?.split('?')[0];
     const userId = user?.sub || 'anonymous';
+    const requestBody = isAuthenticationRoute(url)
+      ? '[REDACTED]'
+      : JSON.stringify(sanitizeSensitiveData(body));
 
-    // Log the request
     this.logger.log(
-      `[${userId}] ${method} ${url} - Request body: ${JSON.stringify(body)}`,
+      `[${userId}] ${method} ${url} - Request body: ${requestBody}`,
     );
 
     const now = Date.now();
     return next.handle().pipe(
       tap((data) => {
-        // Log the response
         this.logger.log(
           `[${userId}] ${method} ${url} - ${Date.now() - now}ms - Response: ${
             typeof data === 'object' ? 'Object returned' : data

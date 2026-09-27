@@ -8,9 +8,13 @@ export class AuditConfigService {
   private events = new Set<string>();
 
   constructor(private readonly config: ConfigService) {
-    this.enabled = this.config.get<boolean>('audit.enabled') ?? false;
-    (this.config.get<string[]>('audit.entities') ?? []).forEach(e => this.entities.add(e));
-    (this.config.get<string[]>('audit.events') ?? []).forEach(ev => this.events.add(ev));
+    this.enabled = this.config.get<boolean>('audit.enabled') ?? true;
+    (this.config.get<string[]>('audit.entities') ?? []).forEach((entity) =>
+      this.entities.add(entity.toLowerCase()),
+    );
+    (this.config.get<string[]>('audit.events') ?? []).forEach((event) =>
+      this.events.add(event.toLowerCase()),
+    );
   }
 
   isEnabled() {
@@ -39,7 +43,7 @@ export class AuditConfigService {
   }
 
   allowsEvent(event: string) {
-    return this.events.has(event.toLowerCase());
+    return this.events.size === 0 || this.events.has(event.toLowerCase());
   }
 
   getEvents() {

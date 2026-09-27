@@ -1,11 +1,16 @@
 import { ApiResponseProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
 import { UsersStatus } from '../enums/users-status.enum';
 import { UsersRole } from '../enums/users-role.enum';
 
 export class UserDto {
   @ApiResponseProperty({ example: 1 })
   id: number;
+
+  @ApiResponseProperty({ type: Date })
+  createdAt: Date;
+
+  @ApiResponseProperty({ type: Date })
+  updatedAt: Date;
 
   @ApiResponseProperty({ example: 'Ana Pérez' })
   name: string;
@@ -14,7 +19,6 @@ export class UserDto {
   email: string;
 
   @ApiResponseProperty({ example: '809-555-0101' })
-  @IsString()
   phone: string;
 
   @ApiResponseProperty({ enum: UsersRole })

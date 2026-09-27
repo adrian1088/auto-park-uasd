@@ -2,7 +2,7 @@ import {
   Column,
   Entity,
   ManyToOne,
-  OneToMany,
+  RelationId,
 } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { User } from '../../users/entities/users.entity';
@@ -27,18 +27,19 @@ export class AuditLog extends AuditEntity {
   resource: string;
 
   @Column({
-    type: 'int',
+    type: 'varchar',
+    length: 255,
     nullable: true,
     comment: 'ID of the entity on which the action was performed',
   })
-  resourceId: number;
+  resourceId: string;
 
   @Column({
     type: 'jsonb',
     nullable: true,
     comment: 'Payload associated with the action',
   })
-  payload: Record<string, unknown>;
+  payload: Record<string, unknown> | null;
 
   @Column({ length: 20, default: 'SUCCESS', comment: 'Status of the action' })
   status: 'SUCCESS' | 'ERROR';
@@ -48,8 +49,11 @@ export class AuditLog extends AuditEntity {
     nullable: true,
     comment: 'Error message if the action failed',
   })
-  errorMessage: string;
+  errorMessage: string | null;
 
   @ManyToOne(() => User, (user) => user.auditLogs)
-  user: User; // Muchos logs pueden pertenecer a un solo usuario
+  user: User | null;
+
+  @RelationId((auditLog: AuditLog) => auditLog.user)
+  userId: number | null;
 }

@@ -38,8 +38,8 @@ async function bootstrap() {
       deepScanRoutes: true,
     });
 
-    SwaggerModule.setup(appConfig.swaggerPath, app, document, {
-      jsonDocumentUrl: 'swagger/json',
+    SwaggerModule.setup(`${appConfig.apiPrefix}/${appConfig.swaggerPath}`, app, document, {
+      jsonDocumentUrl: `${appConfig.apiPrefix}/${appConfig.swaggerPath}/json`,
       swaggerOptions: {
         // persistAuthorization: true,
         docExpansion: 'none',
@@ -56,6 +56,7 @@ async function bootstrap() {
     console.log(
       `📚 Swagger docs: ${appUrl}/${appConfig.apiPrefix}/${appConfig.swaggerPath}`,
     );
+    console.log(`🌐 API json documentation ${appUrl}/${appConfig.apiPrefix}/${appConfig.swaggerPath}/json`);
   });
 }
 bootstrap();
