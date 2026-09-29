@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -17,6 +18,9 @@ import { UpdateParkingFloorDto } from './dto/update-parking-floor.dto';
 import { UpdateParkingLotDto } from './dto/update-parking-lot.dto';
 import { UpdateParkingSpaceDto } from './dto/update-parking-space.dto';
 import { ParkingService } from './parking.service';
+import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
+import { FindParkingLotsDto, ParkingLotDto } from './dto/parking-lot.dto';
+import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
 
 @ApiTags('Parking')
 @Controller('parking')
@@ -24,23 +28,45 @@ export class ParkingController {
   constructor(private readonly parkingService: ParkingService) {}
 
   @Post('lots')
+  @ApiResponseType(ParkingLotDto, {
+    type: 'single',
+    status: HttpStatus.CREATED,
+  })
   createLot(@Body() dto: CreateParkingLotDto) {
     return this.parkingService.createLot(dto);
   }
 
   @Get('lots')
-  findAllLots() {
-    return this.parkingService.findAllLots();
+  @ApiResponseType(ParkingLotDto, { type: 'paginated' })
+  async findAllLots(
+    @Query() query: FindParkingLotsDto,
+  ): Promise<ResponsePaginatedDto<ParkingLotDto>> {
+    const { page, limit } = query;
+    const lots = await this.parkingService.findAllLots(query);
+
+    return ResponsePaginatedDto.fromDataAndMeta({
+      data: ParkingLotDto.fromEntities(lots.data),
+      total: lots.total,
+      page,
+      limit,
+    });
   }
 
   @Get('lots/:id')
-  findLot(@Param('id', ParseIntPipe) id: number) {
-    return this.parkingService.findLot(id);
+  @ApiResponseType(ParkingLotDto)
+  async findLot(@Param('id', ParseIntPipe) id: number): Promise<ParkingLotDto> {
+    const lot = await this.parkingService.findLot(id);
+    return ParkingLotDto.fromEntity(lot);
   }
 
   @Patch('lots/:id')
-  updateLot(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateParkingLotDto) {
-    return this.parkingService.updateLot(id, dto);
+  @ApiResponseType(ParkingLotDto)
+  async updateLot(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateParkingLotDto,
+  ): Promise<ParkingLotDto> {
+    const lot = await this.parkingService.updateLot(id, dto);
+    return ParkingLotDto.fromEntity(lot);
   }
 
   @Delete('lots/:id')
@@ -85,7 +111,9 @@ export class ParkingController {
 
   @Get('spaces')
   findAllSpaces(@Query('floorId') floorId?: string) {
-    return this.parkingService.findAllSpaces(floorId === undefined ? undefined : Number(floorId));
+    return this.parkingService.findAllSpaces(
+      floorId === undefined ? undefined : Number(floorId),
+    );
   }
 
   @Get('spaces/:id')

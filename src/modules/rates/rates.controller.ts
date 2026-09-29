@@ -14,12 +14,17 @@ import { UpdateRateDto } from './dto/update-rate.dto';
 import { Rate } from './entities/rate.entity';
 import { RateType } from './enum/rate-type.enum';
 import { RatesService } from './rates.service';
+import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
+import { RateDto } from './dto/rate.dto';
 
 @Controller('rates')
 export class RatesController {
   constructor(private readonly ratesService: RatesService) {}
 
   @Post()
+  @ApiResponseType(RateDto, {
+    type: 'single',
+  })
   create(@Body() createRateDto: CreateRateDto): Promise<Rate> {
     return this.ratesService.create(createRateDto);
   }

@@ -11,7 +11,7 @@ export class Rate extends AuditEntity {
   type: RateType;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, comment: 'Rate amount' })
-  amount: string;
+  amount: number;
 
   @Column({ type: 'timestamp', comment: 'Start of rate validity' })
   validFrom: Date;

@@ -12,7 +12,7 @@ export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 
   @Get()
-  @UseGuards(AuditAdminGuard)
+  // @UseGuards(AuditAdminGuard)
   @ApiResponseType(AuditLogDto, { type: 'paginated' })
   getAll(@Query() query: FindAuditLogDto) {
     return this.auditService.getAll(query);

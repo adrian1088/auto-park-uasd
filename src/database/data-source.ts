@@ -2,8 +2,7 @@ import 'dotenv/config';
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { SnakeCaseNamingStrategy } from './snake-case-naming.strategy';
-console.log('hey:', __dirname + '/**/*.entity{.ts,.js}');
-console.log('hey2:', __dirname + '/migrations/*{.ts,.js}');
+
 export default new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST || 'localhost',

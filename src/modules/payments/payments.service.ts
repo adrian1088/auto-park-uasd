@@ -69,8 +69,10 @@ export class PaymentsService {
       payment.user = await this.findUser(dto.userId);
     }
     if (dto.amount !== undefined) payment.amount = dto.amount;
-    if (dto.paymentDate !== undefined) payment.paymentDate = new Date(dto.paymentDate);
-    if (dto.paymentMethod !== undefined) payment.paymentMethod = dto.paymentMethod;
+    if (dto.paymentDate !== undefined)
+      payment.paymentDate = new Date(dto.paymentDate);
+    if (dto.paymentMethod !== undefined)
+      payment.paymentMethod = dto.paymentMethod;
     const saved = await this.paymentsRepository.save(payment);
     return this.findOne(saved.id);
   }
@@ -84,7 +86,9 @@ export class PaymentsService {
       throw new NotFoundException('Pago no encontrado');
     }
     if (payment.ticket) {
-      throw new ConflictException('No se puede eliminar un pago asociado a un ticket');
+      throw new ConflictException(
+        'No se puede eliminar un pago asociado a un ticket',
+      );
     }
     await this.paymentsRepository.remove(payment);
   }

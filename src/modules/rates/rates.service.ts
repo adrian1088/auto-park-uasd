@@ -31,7 +31,7 @@ export class RatesService {
 
     const rate = this.ratesRepository.create({
       type: createRateDto.type,
-      amount: createRateDto.amount.toFixed(2),
+      amount: Number(createRateDto.amount.toFixed(2)),
       validFrom: new Date(createRateDto.validFrom),
       validTo: createRateDto.validTo ? new Date(createRateDto.validTo) : null,
       isActive: true,
@@ -103,7 +103,7 @@ export class RatesService {
     }
 
     rate.type = updateRateDto.type ?? rate.type;
-    rate.amount = updateRateDto.amount?.toFixed(2) ?? rate.amount;
+    rate.amount = Number(updateRateDto.amount?.toFixed(2)) ?? rate.amount;
     rate.validFrom = updateRateDto.validFrom
       ? new Date(updateRateDto.validFrom)
       : rate.validFrom;
