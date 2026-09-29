@@ -62,3 +62,10 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
+
+## Docker
+
+```bash
+# comando para crear container de  base de datos del proyecto
+docker-compose up --build -d
+```
