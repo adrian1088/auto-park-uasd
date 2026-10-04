@@ -5,7 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UsersRole } from '../../users/enums/users-role.enum';
+import { UserRole } from '../../users/enums/users-role.enum';
 
 @Injectable()
 export class AuditAdminGuard implements CanActivate {
@@ -16,7 +16,7 @@ export class AuditAdminGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    if (request.user.role !== UsersRole.ADMIN) {
+    if (request.user.role !== UserRole.ADMIN) {
       throw new ForbiddenException();
     }
 

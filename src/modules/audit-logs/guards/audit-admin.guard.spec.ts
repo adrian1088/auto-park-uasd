@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UsersRole } from '../../../modules/users/enums/users-role.enum';
+import { UserRole } from '../../../modules/users/enums/users-role.enum';
 import { AuditAdminGuard } from './audit-admin.guard';
 
 describe('AuditAdminGuard', () => {
@@ -19,12 +19,12 @@ describe('AuditAdminGuard', () => {
   });
 
   it('rejects authenticated non-admin users', () => {
-    expect(() => guard.canActivate(contextFor({ role: UsersRole.USER }))).toThrow(
+    expect(() => guard.canActivate(contextFor({ role: UserRole.USER }))).toThrow(
       ForbiddenException,
     );
   });
 
   it('allows administrators', () => {
-    expect(guard.canActivate(contextFor({ role: UsersRole.ADMIN }))).toBe(true);
+    expect(guard.canActivate(contextFor({ role: UserRole.ADMIN }))).toBe(true);
   });
 });

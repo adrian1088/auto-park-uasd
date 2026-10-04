@@ -16,7 +16,7 @@ import { Rate } from '../rates/entities/rate.entity';
 import { RateType } from '../rates/enum/rate-type.enum';
 import { Reservation } from '../reservations/entities/reservation.entity';
 import { User } from '../users/entities/users.entity';
-import { UsersStatus } from '../users/enums/users-status.enum';
+import { UserStatus } from '../users/enums/users-status.enum';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -92,7 +92,7 @@ export class TicketsService {
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
       }
-      if (user.status !== UsersStatus.ACTIVE) {
+      if (user.status !== UserStatus.ACTIVE) {
         throw new ConflictException('El usuario está inactivo y no puede ingresar');
       }
       const activeTicket = await manager.getRepository(Ticket).findOne({

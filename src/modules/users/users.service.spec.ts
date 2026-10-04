@@ -19,8 +19,8 @@ jest.mock('@nestjs/typeorm', () => ({
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from './entities/users.entity';
-import { UsersRole } from './enums/users-role.enum';
-import { UsersStatus } from './enums/users-status.enum';
+import { UserRole } from './enums/users-role.enum';
+import { UserStatus } from './enums/users-status.enum';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
@@ -34,8 +34,8 @@ describe('UsersService', () => {
     email: 'ana@example.com',
     password: 'secret123',
     phone: '809-555-0101',
-    role: UsersRole.USER,
-    status: UsersStatus.ACTIVE,
+    role: UserRole.USER,
+    status: UserStatus.ACTIVE,
   } as User;
 
   beforeEach(() => {
@@ -102,7 +102,7 @@ describe('UsersService', () => {
     const result = await service.remove(user.id);
 
     expect(repository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ status: UsersStatus.INACTIVE }),
+      expect.objectContaining({ status: UserStatus.INACTIVE }),
     );
     expect(result).not.toHaveProperty('password');
   });

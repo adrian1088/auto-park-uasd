@@ -6,6 +6,8 @@ import { SharedModule } from './shared/shared.module';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import { ConfigModule } from '@nestjs/config';
+import jwtConfig from './config/jwt.config';
+import encryptConfig from './config/encrypt.config';
 import { DatabaseModule } from './database/database.module';
 import { VehiclesModule } from './modules/vehicles/vehicles.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,6 +17,7 @@ import { ParkingModule } from './modules/parking/parking.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { RatesModule } from './modules/rates/rates.module';
 import { HealthModule } from './health/health.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -23,6 +26,8 @@ import { HealthModule } from './health/health.module';
       load: [
         appConfig,
         databaseConfig,
+        jwtConfig,
+        encryptConfig,
         // authConfig,
         // mailConfig,
         // fileConfig,
