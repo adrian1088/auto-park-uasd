@@ -7,10 +7,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { EncryptService } from '../../shared/encrypt/encrypt.service';
 import { FindUsersDto } from './dto/find-users.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/users.entity';
-import { UsersStatus } from './enums/users-status.enum';
+import { UserStatus } from './enums/users-status.enum';
 
 export type PublicUser = Omit<User, 'password'>;
 
@@ -19,10 +20,13 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly repo: Repository<User>,
+    private readonly encryptService: EncryptService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<PublicUser> {
     await this.ensureEmailAvailable(createUserDto.email);
+    createUserDto.password = await this.encryptService.hash(createUserDto.password);
+
     const user = this.repo.create(createUserDto);
     const savedUser = await this.repo.save(user);
     return this.toPublicUser(savedUser);
@@ -81,6 +85,12 @@ export class UsersService {
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       await this.ensureEmailAvailable(updateUserDto.email, id);
     }
+    if (updateUserDto.password) {
+      updateUserDto.password = await this.encryptService.hash(
+        updateUserDto.password,
+      );
+    }
+
     Object.assign(user, updateUserDto);
     const savedUser = await this.repo.save(user);
     return this.toPublicUser(savedUser);
@@ -88,7 +98,7 @@ export class UsersService {
 
   async remove(id: number): Promise<PublicUser> {
     const user = await this.findEntity(id);
-    user.status = UsersStatus.INACTIVE;
+    user.status = UserStatus.INACTIVE;
     const savedUser = await this.repo.save(user);
     return this.toPublicUser(savedUser);
   }

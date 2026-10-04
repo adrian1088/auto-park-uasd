@@ -1,6 +1,6 @@
 import { Entity, Column, OneToMany } from 'typeorm';
-import { UsersStatus } from '../enums/users-status.enum';
-import { UsersRole } from '../enums/users-role.enum';
+import { UserStatus } from '../enums/users-status.enum';
+import { UserRole } from '../enums/users-role.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { Reservation } from '../../reservations/entities/reservation.entity';
@@ -16,24 +16,29 @@ export class User extends AuditEntity {
   @Column({ type: 'varchar', length: 255, comment: 'User email' })
   email: string;
 
-  @Column({ type: 'varchar', length: 255, comment: 'User password' })
+  @Column({
+    type: 'varchar',
+    select: false,
+    length: 255,
+    comment: 'User password',
+  })
   password: string;
 
   @Column({
     type: 'enum',
-    enum: UsersRole,
-    default: UsersRole.USER,
+    enum: UserRole,
+    default: UserRole.USER,
     comment: 'User role',
   })
-  role: UsersRole;
+  role!: UserRole;
 
   @Column({
     type: 'enum',
-    enum: UsersStatus,
-    default: UsersStatus.ACTIVE,
+    enum: UserStatus,
+    default: UserStatus.ACTIVE,
     comment: 'User status',
   })
-  status: UsersStatus;
+  status!: UserStatus;
 
   @Column({ type: 'varchar', length: 255, comment: 'Phone number' })
   phone: string;

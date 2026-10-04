@@ -6,10 +6,11 @@ import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
 import { AuditLogsModule } from '../modules/audit-logs/audit.module';
+import { EncryptModule } from './encrypt/encrypt.module';
 
 @Global()
 @Module({
-  imports: [AuditLogsModule],
+  imports: [AuditLogsModule, EncryptModule],
   providers: [
     BaseEntity,
     // Global interceptors

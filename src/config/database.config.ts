@@ -1,5 +1,15 @@
 import { registerAs } from '@nestjs/config';
-import { DatabaseConfig } from './database-config.type';
+
+export interface DatabaseConfig {
+  type: 'postgres';
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  database: string;
+  synchronize: boolean;
+  maxConnections: number;
+}
 
 export default registerAs<DatabaseConfig>('database', () => ({
   type: 'postgres',

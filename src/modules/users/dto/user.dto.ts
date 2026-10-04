@@ -1,6 +1,6 @@
 import { ApiResponseProperty } from '@nestjs/swagger';
-import { UsersStatus } from '../enums/users-status.enum';
-import { UsersRole } from '../enums/users-role.enum';
+import { UserStatus } from '../enums/users-status.enum';
+import { UserRole } from '../enums/users-role.enum';
 
 export class UserDto {
   @ApiResponseProperty({ example: 1 })
@@ -21,9 +21,9 @@ export class UserDto {
   @ApiResponseProperty({ example: '809-555-0101' })
   phone: string;
 
-  @ApiResponseProperty({ enum: UsersRole })
-  role?: UsersRole;
+  @ApiResponseProperty({ enum: UserRole })
+  role?: UserRole;
 
-  @ApiResponseProperty({ enum: UsersStatus })
-  status?: UsersStatus;
+  @ApiResponseProperty({ enum: UserStatus })
+  status?: UserStatus;
 }

@@ -11,7 +11,7 @@ import {
 import { VehicleType } from '../enum/vihicle-type.enum';
 
 export class CreateVehicleDto {
-	@ApiProperty({ example: 'ABC-1234', maxLength: 20 })
+	@ApiProperty({ example: 'A-1234', maxLength: 20 })
 	@IsString()
 	@Length(1, 20)
 	plateNumber: string;
