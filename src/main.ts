@@ -3,11 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppConfig } from './config/app-config.type';
+import { AppConfigType } from './config/app-config.type';
+import { CorsConfigType } from './config/cors.config';
 import { ResponseDto } from './shared/dtos/response.dto';
 import { ResponsePaginatedDto } from './shared/dtos/response-paginated.dto';
 import cookieParser from 'cookie-parser';
 import { useContainer } from 'class-validator';
+import helmet from 'helmet';
+import compression from 'compression';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,6 +30,19 @@ async function bootstrap() {
   // cookie
   app.use(cookieParser());
 
+  // security and compression middleware
+  app.use(helmet());
+  app.use(compression());
+
+  // CORS configuration
+  const corsConfig = config.getOrThrow<CorsConfigType>('cors');
+  app.enableCors({
+    origin: corsConfig.origin,
+    methods: corsConfig.methods,
+    allowedHeaders: corsConfig.allowedHeaders,
+    credentials: corsConfig.credentials,
+  });
+
   // global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
@@ -37,7 +53,7 @@ async function bootstrap() {
   );
 
   // API prefix
-  const appConfig = config.getOrThrow<AppConfig>('app');
+  const appConfig = config.getOrThrow<AppConfigType>('app');
   app.setGlobalPrefix(appConfig.apiPrefix);
 
   // swagger configuration

@@ -25,10 +25,11 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto): Promise<PublicUser> {
     await this.ensureEmailAvailable(createUserDto.email);
-    createUserDto.password = await this.encryptService.hash(createUserDto.password);
-
-    const user = this.repo.create(createUserDto);
+    // TODO: Eliminar cuando se implemente enviar invitacion
+    const password = await this.encryptService.hash('secret123');
+    const user = this.repo.create({ ...createUserDto, password });
     const savedUser = await this.repo.save(user);
+
     return this.toPublicUser(savedUser);
   }
 
@@ -85,11 +86,12 @@ export class UsersService {
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       await this.ensureEmailAvailable(updateUserDto.email, id);
     }
-    if (updateUserDto.password) {
-      updateUserDto.password = await this.encryptService.hash(
-        updateUserDto.password,
-      );
-    }
+    // TODO: Eliminar cuando se implemente cambiar contraseña
+    // if (updateUserDto.password) {
+    //   updateUserDto.password = await this.encryptService.hash(
+    //     updateUserDto.password,
+    //   );
+    // }
 
     Object.assign(user, updateUserDto);
     const savedUser = await this.repo.save(user);

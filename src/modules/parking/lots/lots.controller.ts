@@ -33,12 +33,20 @@ export class LotsController {
   }
 
   @Get()
+  @ApiResponseType(ParkingLotDto, { type: 'array' })
+  async findAll(
+  ): Promise<ParkingLotDto[]> {
+    const lots = await this.lotsService.findAllLots();
+    return ParkingLotDto.fromEntities(lots);
+  }
+
+  @Get('paginated')
   @ApiResponseType(ParkingLotDto, { type: 'paginated' })
   async findAllLots(
     @Query() query: FindParkingLotsDto,
   ): Promise<ResponsePaginatedDto<ParkingLotDto>> {
     const { page, limit } = query;
-    const lots = await this.lotsService.findAllLots(query);
+    const lots = await this.lotsService.findLotsPaginated(query);
 
     return ResponsePaginatedDto.fromDataAndMeta({
       data: ParkingLotDto.fromEntities(lots.data),

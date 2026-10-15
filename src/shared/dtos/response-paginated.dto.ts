@@ -20,8 +20,8 @@ export class ResponsePaginatedDto<T> extends ResponseDto<T[]> {
       total: result.total,
       page: result.page,
       limit: result.limit,
-      hasNextPage: result.page * result.limit < result.total,
-      hasPreviousPage: result.page > 1,
+      // hasNextPage: result.page * result.limit < result.total,
+      // hasPreviousPage: result.page > 1,
     };
     return response;
   }

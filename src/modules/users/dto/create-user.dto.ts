@@ -12,10 +12,10 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'secret123', minLength: 6 })
-  @IsString()
-  @MinLength(6)
-  password: string;
+  // @ApiProperty({ example: 'secret123', minLength: 6 })
+  // @IsString()
+  // @MinLength(6)
+  // password: string;
 
   @ApiProperty({ example: '809-555-0101' })
   @IsString()

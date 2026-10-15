@@ -1,7 +1,7 @@
 import { registerAs } from '@nestjs/config';
-import { AppConfig } from './app-config.type';
+import { AppConfigType } from './app-config.type';
 
-export default registerAs<AppConfig>('app', () => {
+export default registerAs<AppConfigType>('app', () => {
   return {
     nodeEnv: process.env.NODE_ENV || 'development',
     name: process.env.APP_NAME || 'auto-park-uasd',

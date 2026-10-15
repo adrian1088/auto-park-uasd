@@ -19,15 +19,15 @@ export class PaginationMetaDto {
   })
   total: number;
 
-  @ApiResponseProperty({
-    type: Boolean,
-    example: true,
-  })
-  hasNextPage: boolean;
+  // @ApiResponseProperty({
+  //   type: Boolean,
+  //   example: true,
+  // })
+  // hasNextPage: boolean;
 
-  @ApiResponseProperty({
-    type: Boolean,
-    example: false,
-  })
-  hasPreviousPage: boolean;
+  // @ApiResponseProperty({
+  //   type: Boolean,
+  //   example: false,
+  // })
+  // hasPreviousPage: boolean;
 }

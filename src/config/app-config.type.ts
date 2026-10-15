@@ -1,4 +1,4 @@
-export type AppConfig = {
+export type AppConfigType = {
   nodeEnv: string;
   name: string;
   description: string;
