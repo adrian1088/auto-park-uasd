@@ -20,7 +20,7 @@ export class User extends AuditEntity {
     type: 'varchar',
     select: false,
     length: 255,
-    comment: 'User password',
+    comment: 'User password'
   })
   password: string;
 

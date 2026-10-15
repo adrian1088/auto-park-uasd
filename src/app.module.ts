@@ -17,7 +17,7 @@ import { ParkingModule } from './modules/parking/parking.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { RatesModule } from './modules/rates/rates.module';
 import { HealthModule } from './health/health.module';
-import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import corsConfig from './config/cors.config';
 
 @Module({
   imports: [
@@ -28,6 +28,7 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
         databaseConfig,
         jwtConfig,
         encryptConfig,
+        corsConfig,
         // authConfig,
         // mailConfig,
         // fileConfig,

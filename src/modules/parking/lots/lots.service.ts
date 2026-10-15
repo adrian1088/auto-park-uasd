@@ -25,18 +25,12 @@ export class LotsService {
     return this.lotsRepository.save(this.lotsRepository.create(dto));
   }
 
-  async findAllLots({
-    page,
-    limit,
-  }: FindParkingLotsDto): Promise<{ data: ParkingLot[]; total: number }> {
-    const skip = (page - 1) * limit;
-    const [lots, total] = await this.lotsRepository.findAndCount({
+  async findAllLots(): Promise<ParkingLot[]> {
+    const lots  = await this.lotsRepository.find({
       relations: { floors: { spaces: true }, rates: true },
       order: { id: 'DESC' },
-      skip,
-      take: limit,
     });
-    return { data: lots, total };
+    return  lots;
   }
 
   async findLot(id: number): Promise<ParkingLot> {
@@ -56,6 +50,20 @@ export class LotsService {
       throw new NotFoundException('Estacionamiento no encontrado');
     }
     return lot;
+  }
+
+  async findLotsPaginated({
+    page,
+    limit,
+  }: FindParkingLotsDto): Promise<{ data: ParkingLot[]; total: number }> {
+    const skip = (page - 1) * limit;
+    const [lots, total] = await this.lotsRepository.findAndCount({
+      relations: { floors: { spaces: true }, rates: true },
+      order: { id: 'DESC' },
+      skip,
+      take: limit,
+    });
+    return { data: lots, total };
   }
 
   async updateLot(id: number, dto: UpdateParkingLotDto): Promise<ParkingLot> {

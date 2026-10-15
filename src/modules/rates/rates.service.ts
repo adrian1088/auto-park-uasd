@@ -94,6 +94,33 @@ export class RatesService {
     return rate;
   }
 
+  async findPaginated(
+    parkingLotId?: number,
+    type?: RateType,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ data: Rate[]; total: number }> {
+    const query = await this.ratesRepository
+      .createQueryBuilder('rate')
+      .leftJoinAndSelect('rate.parkingLot', 'parkingLot')
+      .orderBy('rate.validFrom', 'DESC');
+
+    if (parkingLotId !== undefined) {
+      query.andWhere('parkingLot.id = :parkingLotId', { parkingLotId });
+    }
+    if (type !== undefined) {
+      this.validateType(type);
+      query.andWhere('rate.type = :type', { type });
+    }
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
+  }
+  
   async update(id: number, updateRateDto: UpdateRateDto): Promise<Rate> {
     const rate = await this.findOne(id);
     const parkingLotId = updateRateDto.parkingLotId ?? rate.parkingLot.id;

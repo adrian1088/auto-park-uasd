@@ -22,6 +22,8 @@ import {
 import JwtRefreshGuard from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SignUpDto } from './dto/sign-up.dto';
+import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
+import { CurrentUserDto } from './dto/current-user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -66,19 +68,19 @@ export class AuthController {
     const user = await this.authService.validateUser(dto.email, dto.password);
     const { accessToken, refreshToken } = await this.authService.signIn(user);
     this.setAuthCookies(res, accessToken, refreshToken);
-    return { message: 'Login successful' };
+    return { message: 'Signed in successfully' };
   }
 
-@Public()
-@Post('sign-up')
-@ApiOperation({
-  summary: 'Sign up a new user',
-  description: 'Create a new user account and return the created user',
-})
-async signUp(@Body() dto: SignUpDto) {
-  const user = await this.authService.signUp(dto);
-  return user;
-}
+  @Public()
+  @Post('sign-up')
+  @ApiOperation({
+    summary: 'Sign up a new user',
+    description: 'Create a new user account and return the created user',
+  })
+  async signUp(@Body() dto: SignUpDto) {
+    const user = await this.authService.signUp(dto);
+    return user;
+  }
 
   @Public()
   @Post('refresh')
@@ -88,12 +90,15 @@ async signUp(@Body() dto: SignUpDto) {
       'Refresh access token using refresh token stored in cookie, return new access token and refresh token in cookie',
   })
   @UseGuards(JwtRefreshGuard)
-  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-     const { accessToken, refreshToken } = await this.authService.refreshTokens(
-       req.cookies.Refresh,
-     );
-     this.setAuthCookies(res, accessToken, refreshToken);
-     return { message: 'Tokens refreshed successfully' };
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken } = await this.authService.refreshTokens(
+      req.cookies.Refresh,
+    );
+    this.setAuthCookies(res, accessToken, refreshToken);
+    return { message: 'Tokens refreshed successfully' };
   }
 
   @Get('me')
@@ -102,8 +107,9 @@ async signUp(@Body() dto: SignUpDto) {
     summary: 'Get current user',
     description: "Return the currently authenticated user's information",
   })
-  async me(@CurrentUser() user: CurrentUserType) {
-    return user;
+  @ApiResponseType(CurrentUserDto)
+  async me(@CurrentUser() user: CurrentUserType): Promise<CurrentUserDto> {
+    return CurrentUserDto.fromCurrentUser(user);
   }
 
   @Public()
@@ -120,8 +126,8 @@ async signUp(@Body() dto: SignUpDto) {
   ) {
     const userId = user?.id;
     const result = await this.authService.signOut(userId);
-      this.clearAuthCookies(res);
-    return result;
+    this.clearAuthCookies(res);
+    return { message: 'Signed out successfully' };
   }
 
   private isProd() {
