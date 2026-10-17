@@ -40,7 +40,7 @@ import ms from 'ms';
     AuthService,
     JwtStrategy,
     JwtRefreshStrategy,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
   exports: [AuthService],
 })
