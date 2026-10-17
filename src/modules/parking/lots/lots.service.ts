@@ -26,11 +26,11 @@ export class LotsService {
   }
 
   async findAllLots(): Promise<ParkingLot[]> {
-    const lots  = await this.lotsRepository.find({
+    const lots = await this.lotsRepository.find({
       relations: { floors: { spaces: true }, rates: true },
       order: { id: 'DESC' },
     });
-    return  lots;
+    return lots;
   }
 
   async findLot(id: number): Promise<ParkingLot> {
@@ -57,13 +57,13 @@ export class LotsService {
     limit,
   }: FindParkingLotsDto): Promise<{ data: ParkingLot[]; total: number }> {
     const skip = (page - 1) * limit;
-    const [lots, total] = await this.lotsRepository.findAndCount({
+    const [data, total] = await this.lotsRepository.findAndCount({
       relations: { floors: { spaces: true }, rates: true },
       order: { id: 'DESC' },
       skip,
       take: limit,
     });
-    return { data: lots, total };
+    return { data, total };
   }
 
   async updateLot(id: number, dto: UpdateParkingLotDto): Promise<ParkingLot> {

@@ -43,7 +43,7 @@ export class Ticket extends AuditEntity {
     default: 0,
     comment: 'Hourly rate snapshot captured at check-in',
   })
-  rateAmount: string;
+  rateAmount: number;
 
   @ManyToOne(() => Vehicle, (vehicle) => vehicle.tickets)
   vehicle: Vehicle; // Muchos tickets pueden pertenecer a un solo vehículo

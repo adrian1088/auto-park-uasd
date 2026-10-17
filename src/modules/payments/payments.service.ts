@@ -5,11 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from '../users/entities/users.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Payment } from './entities/payment.entity';
+import { FindPaymentDto, FindPaymentPaginatedDto } from './dto/payment.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -32,12 +33,39 @@ export class PaymentsService {
     return this.toSafePayment(await this.paymentsRepository.save(payment));
   }
 
-  async findAll(): Promise<Payment[]> {
+  async findAll(query: FindPaymentDto): Promise<Payment[]> {
+    const where: FindOptionsWhere<Payment> = {};
+    if (query.amount !== undefined) where.amount = query.amount;
+    if (query.date !== undefined) where.paymentDate = query.date;
+    if (query.method !== undefined) where.paymentMethod = query.method;
+
     const payments = await this.paymentsRepository.find({
+      where,
       relations: { user: true, ticket: true },
       order: { id: 'DESC' },
     });
     return payments.map((payment) => this.toSafePayment(payment));
+  }
+
+  async findPaymentPaginated(query: FindPaymentPaginatedDto): Promise<{ data: Payment[]; total: number }> {
+    const skip = (query.page - 1) * query.limit;
+    const take = query.limit;
+    const where: FindOptionsWhere<Payment> = {};
+    if (query.amount !== undefined) where.amount = query.amount;
+    if (query.date !== undefined) where.paymentDate = query.date;
+    if (query.method !== undefined) where.paymentMethod = query.method;
+    
+    const [data, total] = await this.paymentsRepository.findAndCount({
+      where,
+      relations: { user: true, ticket: true },
+      order: { id: 'DESC' },
+      skip,
+      take,
+    });
+    return {
+      data,
+      total,
+    };
   }
 
   async findOne(id: number): Promise<Payment> {

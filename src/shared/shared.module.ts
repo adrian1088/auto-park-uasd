@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { BaseEntity } from './base/base-entity';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
@@ -13,6 +13,7 @@ import { EncryptModule } from './encrypt/encrypt.module';
   imports: [AuditLogsModule, EncryptModule],
   providers: [
     BaseEntity,
+    Logger,
     // Global interceptors
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     {

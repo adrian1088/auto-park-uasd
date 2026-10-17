@@ -42,7 +42,7 @@ export class LotsController {
 
   @Get('paginated')
   @ApiResponseType(ParkingLotDto, { type: 'paginated' })
-  async findAllLots(
+  async findLotsPaginated(
     @Query() query: FindParkingLotsDto,
   ): Promise<ResponsePaginatedDto<ParkingLotDto>> {
     const { page, limit } = query;

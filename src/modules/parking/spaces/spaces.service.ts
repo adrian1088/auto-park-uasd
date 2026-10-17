@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { rejectNullValues } from '../../../shared/utils/reject-null-values';
 import { Ticket } from '../../tickets/entities/ticket.entity';
 import { TicketStatus } from '../../tickets/enum/ticket-status.enum';
@@ -14,6 +14,7 @@ import { ParkingSpace } from '../entities/parking-space.entity';
 import { ParkingSpaceStatus } from '../enum/parking-space-status.enum';
 import { FloorsService } from '../floors/floors.service';
 import { LotsService } from '../lots/lots.service';
+import { FindParkingSpacesPaginatedDto } from './dto/parking-space.dto';
 
 @Injectable()
 export class SpacesService {
@@ -29,7 +30,7 @@ export class SpacesService {
   async createSpace(dto: CreateParkingSpaceDto): Promise<ParkingSpace> {
     const floor = await this.floorsService.findFloorWithLot(dto.floorId);
     await this.ensureSpaceNumberAvailable(dto.spaceNumber, floor.id);
-    await this.lotsService.ensureLotHasCapacity(floor.parkingLot.id);
+    await this.lotsService.ensureLotHasCapacity(floor.lot.id);
     return this.spacesRepository.save(
       this.spacesRepository.create({
         spaceNumber: dto.spaceNumber.trim(),
@@ -40,21 +41,59 @@ export class SpacesService {
     );
   }
 
-  findAllSpaces(floorId?: number): Promise<ParkingSpace[]> {
+  findAllSpaces(lotId?: number, floorId?: number): Promise<ParkingSpace[]> {
+    const where: FindOptionsWhere<ParkingSpace> =
+      lotId === undefined
+        ? floorId === undefined
+          ? {}
+          : { floor: { id: floorId } }
+        : floorId === undefined
+          ? { floor: { lot: { id: lotId } } }
+          : { floor: { id: floorId, lot: { id: lotId } } };
+
+    const relations = { floor: { lot: true } };
+    const order: FindOptionsOrder<ParkingSpace> = {
+      floor: { lot: { id: 'ASC' }, floorNumber: 'ASC' },
+      spaceNumber: 'ASC',
+    };
     return this.spacesRepository.find({
-      where: floorId === undefined ? {} : { floor: { id: floorId } },
-      relations: { floor: { parkingLot: true } },
+      where,
+      relations,
+      order,
+    });
+  }
+
+  async findSpacesPaginated(
+    query: FindParkingSpacesPaginatedDto,
+  ): Promise<{ data: ParkingSpace[]; total: number }> {
+    const { page, limit, lotId, floorId } = query;
+    const skip = (page - 1) * limit;
+    const take = limit;
+    const where: FindOptionsWhere<ParkingSpace> =
+      lotId === undefined
+        ? floorId === undefined
+          ? {}
+          : { floor: { id: floorId } }
+        : floorId === undefined
+          ? { floor: { lot: { id: lotId } } }
+          : { floor: { id: floorId, lot: { id: lotId } } };
+    const [data, total] = await this.spacesRepository.findAndCount({
+      where,
+      relations: { floor: { lot: true } },
       order: {
-        floor: { parkingLot: { id: 'ASC' }, floorNumber: 'ASC' },
+        floor: { lot: { id: 'ASC' }, floorNumber: 'ASC' },
         spaceNumber: 'ASC',
       },
+      skip,
+      take,
     });
+    return { data, total };
   }
 
   async findSpace(id: number): Promise<ParkingSpace> {
     const space = await this.spacesRepository.findOne({
       where: { id },
-      relations: { floor: { parkingLot: true } },
+      relations: { floor: { lot: true } },
     });
     if (!space) {
       throw new NotFoundException('Espacio de estacionamiento no encontrado');
@@ -96,8 +135,8 @@ export class SpacesService {
         'Los estados OCCUPIED y RESERVED solo pueden asignarse mediante los flujos operativos',
       );
     }
-    if (floor.parkingLot.id !== space.floor.parkingLot.id) {
-      await this.lotsService.ensureLotHasCapacity(floor.parkingLot.id);
+    if (floor.lot.id !== space.floor.lot.id) {
+      await this.lotsService.ensureLotHasCapacity(floor.lot.id);
     }
     space.spaceNumber = spaceNumber;
     space.type = dto.type ?? space.type;

@@ -14,7 +14,7 @@ export class ParkingLot extends AuditEntity {
   @Column({ type: 'int', comment: 'Capacity of the parking lot' })
   capacity: number;
 
-  @OneToMany(() => ParkingFloor, (floor) => floor.parkingLot)
+  @OneToMany(() => ParkingFloor, (floor) => floor.lot)
   floors: ParkingFloor[];
 
   @OneToMany(() => Rate, (rate) => rate.parkingLot)

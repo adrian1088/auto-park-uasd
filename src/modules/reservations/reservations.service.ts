@@ -55,7 +55,7 @@ export class ReservationsService {
 
   async findAll(): Promise<Reservation[]> {
     const reservations = await this.reservationsRepository.find({
-      relations: { user: true, parkingSpace: { floor: { parkingLot: true } }, vehicle: true },
+      relations: { user: true, parkingSpace: { floor: { lot: true } }, vehicle: true },
       order: { startTime: 'ASC', id: 'DESC' },
     });
     return reservations.map((reservation) => this.toSafeReservation(reservation));
@@ -64,7 +64,7 @@ export class ReservationsService {
   async findOne(id: number): Promise<Reservation> {
     const reservation = await this.reservationsRepository.findOne({
       where: { id },
-      relations: { user: true, parkingSpace: { floor: { parkingLot: true } }, vehicle: true },
+      relations: { user: true, parkingSpace: { floor: { lot: true } }, vehicle: true },
     });
     if (!reservation) {
       throw new NotFoundException('Reserva no encontrada');
