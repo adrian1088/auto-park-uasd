@@ -7,7 +7,7 @@ export class CreateParkingFloorDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  parkingLotId: number;
+  lotId: number;
 
   @ApiProperty({ type: Number, example: 1 })
   @Type(() => Number)

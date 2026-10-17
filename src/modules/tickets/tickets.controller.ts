@@ -36,6 +36,11 @@ export class TicketsController {
     return this.ticketsService.findAll();
   }
 
+  @Get('paginated')
+  findPaginated() {
+    return this.ticketsService.findPaginated();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ticketsService.findOne(id);

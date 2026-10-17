@@ -118,7 +118,7 @@ export class TicketsService {
         .getRepository(Rate)
         .createQueryBuilder('rate')
         .innerJoinAndSelect('rate.parkingLot', 'parkingLot')
-        .where('parkingLot.id = :parkingLotId', { parkingLotId: spot.floor.parkingLot.id })
+        .where('parkingLot.id = :parkingLotId', { parkingLotId: spot.floor.lot.id })
         .andWhere('rate.type = :type', { type: RateType.HOURLY })
         .andWhere('rate.isActive = true')
         .andWhere('rate.validFrom <= :now', { now: new Date() })
@@ -136,7 +136,7 @@ export class TicketsService {
         exitAt: null,
         status: TicketStatus.ACTIVE,
         amount: 0,
-        rateAmount: Number(rate.amount).toFixed(2),
+        rateAmount: rate.amount,
         vehicle,
         user,
         spot,
@@ -165,6 +165,21 @@ export class TicketsService {
       order: { id: 'DESC' },
     });
     return tickets.map((ticket) => this.toSafeTicket(ticket));
+  }
+
+  async findPaginated(): Promise<{ data: Ticket[]; total: number }> {
+    const [data, total] = await this.ticketsRepository.findAndCount({
+      relations: {
+        vehicle: true,
+        user: true,
+        spot: { floor: true },
+        reservation: true,
+        rate: true,
+        payment: true,
+      },
+      order: { id: 'DESC' },
+    });
+    return { data, total };
   }
 
   async findOne(id: number): Promise<Ticket> {
@@ -277,7 +292,7 @@ export class TicketsService {
     }
     const space = await manager.getRepository(ParkingSpace).findOne({
       where: { id: reservation.parkingSpace.id },
-      relations: { floor: { parkingLot: true } },
+      relations: { floor: { lot: true } },
       lock: { mode: 'pessimistic_write' },
     });
     if (!space) {

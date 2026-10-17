@@ -1,18 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Min } from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
+import { CreateParkingFloorDto } from './create-parking-floor.dto';
 
-export class UpdateParkingFloorDto {
-	@ApiPropertyOptional({ type: Number, minimum: 1 })
-	@IsOptional()
-	@Type(() => Number)
-	@IsInt()
-	@Min(1)
-	parkingLotId?: number;
-
-	@ApiPropertyOptional({ type: Number })
-	@IsOptional()
-	@Type(() => Number)
-	@IsInt()
-	floorNumber?: number;
-}
+export class UpdateParkingFloorDto extends PartialType(CreateParkingFloorDto) {}

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -13,6 +14,13 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreateParkingSpaceDto } from '../dto/create-parking-space.dto';
 import { UpdateParkingSpaceDto } from '../dto/update-parking-space.dto';
 import { SpacesService } from './spaces.service';
+import { ApiResponseType } from '../../../shared/decorator/api-response-type.decorator';
+import {
+  FindParkingSpacesDto,
+  FindParkingSpacesPaginatedDto,
+  ParkingSpaceDto,
+} from './dto/parking-space.dto';
+import { ResponsePaginatedDto } from '../../../shared/dtos/response-paginated.dto';
 
 @ApiTags('Parking Spaces')
 @Controller('parking/spaces')
@@ -20,32 +28,63 @@ export class SpacesController {
   constructor(private readonly spacesService: SpacesService) {}
 
   @Post()
-  createSpace(@Body() dto: CreateParkingSpaceDto) {
-    return this.spacesService.createSpace(dto);
+  @ApiResponseType(ParkingSpaceDto, {
+    type: 'single',
+    status: HttpStatus.CREATED,
+  })
+  async createSpace(@Body() dto: CreateParkingSpaceDto) {
+    const space = await this.spacesService.createSpace(dto);
+    return ParkingSpaceDto.fromEntity(space);
   }
 
   @Get()
-  findAllSpaces(@Query('floorId') floorId?: string) {
-    return this.spacesService.findAllSpaces(
-      floorId === undefined ? undefined : Number(floorId),
+  @ApiResponseType(ParkingSpaceDto, { type: 'array' })
+  async findAllSpaces(
+    @Query() query: FindParkingSpacesDto,
+  ) {
+    const spaces = await this.spacesService.findAllSpaces(
+      query.lotId === undefined ? undefined : Number(query.lotId),
+      query.floorId === undefined ? undefined : Number(query.floorId),
     );
+    return ParkingSpaceDto.fromEntities(spaces);
+  }
+
+  @Get('paginated')
+  @ApiResponseType(ParkingSpaceDto, { type: 'paginated' })
+  async findSpacesPaginated(
+    @Query() query: FindParkingSpacesPaginatedDto,
+  ): Promise<ResponsePaginatedDto<ParkingSpaceDto>> {
+    const { page, limit } = query;
+    const { data, total } = await this.spacesService.findSpacesPaginated(query);
+    return ResponsePaginatedDto.fromDataAndMeta({
+      data: ParkingSpaceDto.fromEntities(data),
+      page,
+      limit,
+      total,
+    });
   }
 
   @Get(':id')
-  findSpace(@Param('id', ParseIntPipe) id: number) {
-    return this.spacesService.findSpace(id);
+  @ApiResponseType(ParkingSpaceDto)
+  async findSpace(@Param('id', ParseIntPipe) id: number) {
+    const space = await this.spacesService.findSpace(id);
+    return ParkingSpaceDto.fromEntity(space);
   }
 
   @Patch(':id')
-  updateSpace(
+  @ApiResponseType(ParkingSpaceDto)
+  async updateSpace(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateParkingSpaceDto,
   ) {
-    return this.spacesService.updateSpace(id, dto);
+    const space = await this.spacesService.updateSpace(id, dto);
+    return ParkingSpaceDto.fromEntity(space);
   }
 
   @Delete(':id')
-  removeSpace(@Param('id', ParseIntPipe) id: number) {
-    return this.spacesService.removeSpace(id);
+  @ApiResponseType(ParkingSpaceDto)
+  async removeSpace(@Param('id', ParseIntPipe) id: number) {
+    const space = await this.spacesService.removeSpace(id);
+    return ParkingSpaceDto.fromEntity(space);
   }
 }

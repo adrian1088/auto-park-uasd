@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -13,6 +14,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreateParkingFloorDto } from '../dto/create-parking-floor.dto';
 import { UpdateParkingFloorDto } from '../dto/update-parking-floor.dto';
 import { FloorsService } from './floors.service';
+import { FindParkingFloorsDto, ParkingFloorDto } from './dto/parking-floor.dto';
+import { ResponsePaginatedDto } from '../../../shared/dtos/response-paginated.dto';
+import { ApiResponseType } from '../../../shared/decorator/api-response-type.decorator';
 
 @ApiTags('Parking Floors')
 @Controller('parking/floors')
@@ -20,28 +24,54 @@ export class FloorsController {
   constructor(private readonly floorsService: FloorsService) {}
 
   @Post()
-  createFloor(@Body() dto: CreateParkingFloorDto) {
-    return this.floorsService.createFloor(dto);
+  @ApiResponseType(ParkingFloorDto, {
+    type: 'single',
+    status: HttpStatus.CREATED,
+  })
+  async createFloor(@Body() dto: CreateParkingFloorDto) {
+    const floor = await this.floorsService.createFloor(dto);
+    return ParkingFloorDto.fromEntity(floor);
   }
 
   @Get()
-  findAllFloors(@Query('parkingLotId') parkingLotId?: string) {
-    return this.floorsService.findAllFloors(
-      parkingLotId === undefined ? undefined : Number(parkingLotId),
-    );
+  @ApiResponseType(ParkingFloorDto, { type: 'array' })
+  async findAllFloors(
+    @Query('lotId', ParseIntPipe) lotId?: number,
+  ) {
+    const floors = await this.floorsService.findAllFloors(lotId);
+    return ParkingFloorDto.fromEntities(floors);
+  }
+
+  @Get('paginated')
+  @ApiResponseType(ParkingFloorDto, { type: 'paginated' })
+  async findFloorsPaginated(
+    @Query() query: FindParkingFloorsDto,
+  ): Promise<ResponsePaginatedDto<ParkingFloorDto>> {
+    const { page, limit } = query;
+    const {data, total} = await this.floorsService.findFloorsPaginated(query);
+    return ResponsePaginatedDto.fromDataAndMeta({
+      data: ParkingFloorDto.fromEntities(data),
+      total,
+      page,
+      limit,
+    });
   }
 
   @Get(':id')
-  findFloor(@Param('id', ParseIntPipe) id: number) {
-    return this.floorsService.findFloor(id);
+  @ApiResponseType(ParkingFloorDto)
+  async findFloor(@Param('id', ParseIntPipe) id: number) {
+    const floor = await this.floorsService.findFloor(id);
+    return ParkingFloorDto.fromEntity(floor);
   }
 
   @Patch(':id')
-  updateFloor(
+  @ApiResponseType(ParkingFloorDto)
+  async updateFloor(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateParkingFloorDto,
   ) {
-    return this.floorsService.updateFloor(id, dto);
+    const floor = await this.floorsService.updateFloor(id, dto);
+    return ParkingFloorDto.fromEntity(floor);
   }
 
   @Delete(':id')
