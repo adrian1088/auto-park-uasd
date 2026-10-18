@@ -14,7 +14,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { CreateParkingFloorDto } from '../dto/create-parking-floor.dto';
 import { UpdateParkingFloorDto } from '../dto/update-parking-floor.dto';
 import { FloorsService } from './floors.service';
-import { FindParkingFloorsDto, ParkingFloorDto } from './dto/parking-floor.dto';
+import { FindParkingFloorsDto, FindParkingFloorPaginatedDto, ParkingFloorDto } from '../dto/parking-floor.dto';
 import { ResponsePaginatedDto } from '../../../shared/dtos/response-paginated.dto';
 import { ApiResponseType } from '../../../shared/decorator/api-response-type.decorator';
 
@@ -35,20 +35,18 @@ export class FloorsController {
 
   @Get()
   @ApiResponseType(ParkingFloorDto, { type: 'array' })
-  async findAllFloors(
-    @Query('lotId', ParseIntPipe) lotId?: number,
-  ) {
-    const floors = await this.floorsService.findAllFloors(lotId);
+  async findAllFloors(@Query() query: FindParkingFloorsDto) {
+    const floors = await this.floorsService.findAllFloors(query);
     return ParkingFloorDto.fromEntities(floors);
   }
 
   @Get('paginated')
   @ApiResponseType(ParkingFloorDto, { type: 'paginated' })
   async findFloorsPaginated(
-    @Query() query: FindParkingFloorsDto,
+    @Query() query: FindParkingFloorPaginatedDto,
   ): Promise<ResponsePaginatedDto<ParkingFloorDto>> {
     const { page, limit } = query;
-    const {data, total} = await this.floorsService.findFloorsPaginated(query);
+    const { data, total } = await this.floorsService.findFloorsPaginated(query);
     return ResponsePaginatedDto.fromDataAndMeta({
       data: ParkingFloorDto.fromEntities(data),
       total,

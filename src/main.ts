@@ -43,11 +43,12 @@ async function bootstrap() {
     credentials: corsConfig.credentials,
   });
 
-  // global validation pipe
+  // global validation pipe for request DTOs
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true,
-      whitelist: false,
+      transform: true, // Convierte automáticamente los tipos de las propiedades según el DTO
+      whitelist: true, // Elimina propiedades no definidas en el DTO
+      forbidNonWhitelisted: true, // Lanza un error si se envían propiedades no definidas en el DTO
       transformOptions: { enableImplicitConversion: true },
     }),
   );

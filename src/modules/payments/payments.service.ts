@@ -4,40 +4,47 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { TicketsService } from '../tickets/tickets.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import { User } from '../users/entities/users.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Payment } from './entities/payment.entity';
-import { FindPaymentDto, FindPaymentPaginatedDto } from './dto/payment.dto';
+import { FilterPaymentDto, FilterPaymentPaginatedDto } from './dto/payment.dto';
+import { CurrentUserType } from '../../shared/decorator/current-user.decorator';
+import { PublicUser, UsersService } from '../users/users.service';
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
     private readonly paymentsRepository: Repository<Payment>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    private readonly usersService: UsersService,
+    private readonly ticketsService: TicketsService,
   ) {}
 
-  async create(dto: CreatePaymentDto): Promise<Payment> {
-    const user = await this.findUser(dto.userId);
+  async create(
+    dto: CreatePaymentDto,
+    currentUser: CurrentUserType,
+  ): Promise<Payment> {
+    const user = await this.findUser(currentUser.id);
+    const ticket = await this.ticketsService.findOne(dto.ticketId);
     const payment = this.paymentsRepository.create({
       amount: dto.amount,
-      paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
+      // paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
       paymentMethod: dto.paymentMethod,
       user,
-      ticket: null,
+      ticket,
     });
     return this.toSafePayment(await this.paymentsRepository.save(payment));
   }
 
-  async findAll(query: FindPaymentDto): Promise<Payment[]> {
+  async findAll(filter: FilterPaymentDto): Promise<Payment[]> {
     const where: FindOptionsWhere<Payment> = {};
-    if (query.amount !== undefined) where.amount = query.amount;
-    if (query.date !== undefined) where.paymentDate = query.date;
-    if (query.method !== undefined) where.paymentMethod = query.method;
+    if (filter.ticketId !== undefined) where.ticket = { id: filter.ticketId };
+    if (filter.date !== undefined) where.paymentDate = filter.date;
+    if (filter.method !== undefined) where.paymentMethod = filter.method;
 
     const payments = await this.paymentsRepository.find({
       where,
@@ -47,14 +54,16 @@ export class PaymentsService {
     return payments.map((payment) => this.toSafePayment(payment));
   }
 
-  async findPaymentPaginated(query: FindPaymentPaginatedDto): Promise<{ data: Payment[]; total: number }> {
-    const skip = (query.page - 1) * query.limit;
-    const take = query.limit;
+  async findPaymentPaginated(
+    filter: FilterPaymentPaginatedDto,
+  ): Promise<{ data: Payment[]; total: number }> {
+    const skip = (filter.page - 1) * filter.limit;
+    const take = filter.limit;
     const where: FindOptionsWhere<Payment> = {};
-    if (query.amount !== undefined) where.amount = query.amount;
-    if (query.date !== undefined) where.paymentDate = query.date;
-    if (query.method !== undefined) where.paymentMethod = query.method;
-    
+    if (filter.ticketId !== undefined) where.ticket = { id: filter.ticketId };
+    if (filter.date !== undefined) where.paymentDate = filter.date;
+    if (filter.method !== undefined) where.paymentMethod = filter.method;
+
     const [data, total] = await this.paymentsRepository.findAndCount({
       where,
       relations: { user: true, ticket: true },
@@ -79,7 +88,7 @@ export class PaymentsService {
     return this.toSafePayment(payment);
   }
 
-  async update(id: number, dto: UpdatePaymentDto): Promise<Payment> {
+  async update(id: number, dto: UpdatePaymentDto, currentUser: CurrentUserType): Promise<Payment> {
     if (
       Object.entries(dto).some(
         ([field, value]) => value === null && field !== 'ticketId',
@@ -93,8 +102,8 @@ export class PaymentsService {
         'No se puede modificar un pago asociado a un ticket; el check-out lo administra',
       );
     }
-    if (dto.userId !== undefined) {
-      payment.user = await this.findUser(dto.userId);
+    if (currentUser.id !== undefined) {
+      payment.user.id = (await this.findUser(currentUser.id)).id;
     }
     if (dto.amount !== undefined) payment.amount = dto.amount;
     if (dto.paymentDate !== undefined)
@@ -132,8 +141,8 @@ export class PaymentsService {
     return payment;
   }
 
-  private async findUser(id: number): Promise<User> {
-    const user = await this.usersRepository.findOneBy({ id });
+  private async findUser(id: number): Promise<PublicUser> {
+    const user = await this.usersService.findOne(id);
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }

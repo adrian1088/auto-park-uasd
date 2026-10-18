@@ -1,5 +1,5 @@
 import {
-  IsDateString,
+  IsDate,
   IsEnum,
   IsInt,
   IsNumber,
@@ -8,10 +8,11 @@ import {
 } from 'class-validator';
 import { RateType } from '../enum/rate-type.enum';
 import { ApiProperty, ApiPropertyOptional,  } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateRateDto {
   @ApiProperty({ description: 'ID del estacionamiento' })
+  @Type(() => Number)
   @IsInt({ message: 'ID del estacionamiento debe ser un número entero.' })
   @Min(1, { message: 'ID del estacionamiento debe ser como mínimo 1.' })
   parkingLotId: number;
@@ -21,6 +22,7 @@ export class CreateRateDto {
   type: RateType;
 
   @ApiProperty({ type: 'number', minimum: 0.01, maximum: 999999.99 })
+  @Type(() => Number)
   @IsNumber(
     { maxDecimalPlaces: 2 },
     { message: 'Monto debe tener como máximo 2 decimales.' },
@@ -33,12 +35,10 @@ export class CreateRateDto {
     format: 'date-time',
     description: 'Fecha y hora de inicio de la validez de la tarifa',
   })
-  // @IsDateString(null, {
-  //   message: 'Fecha y hora de inicio de la validez de la tarifa inválida.',
-  // })
-@Transform(({ value }) => {
-  return new Date(value);
-})
+  @IsDate({
+    message: 'Fecha y hora de inicio de la validez de la tarifa inválida.',
+  })
+  @Transform(({ value }) => new Date(value))
   validFrom: Date;
 
   @ApiPropertyOptional({
@@ -47,9 +47,9 @@ export class CreateRateDto {
     required: false,
     description: 'Fecha y hora de fin de la validez de la tarifa',
   })
-  // @IsDateString(null, {
-  //   message: 'Fecha y hora de fin de la validez de la tarifa inválida.',
-  // })
+  @IsDate({
+    message: 'Fecha y hora de fin de la validez de la tarifa inválida.',
+  })
   @Transform(({ value }) => (value ? new Date(value) : undefined))
   @IsOptional()
   validTo?: Date;

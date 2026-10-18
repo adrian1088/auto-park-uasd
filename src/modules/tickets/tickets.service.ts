@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, FindOptionsWhere, LessThan, MoreThan, Repository } from 'typeorm';
 import { ParkingFloor } from '../parking/entities/parking-floor.entity';
 import { ParkingSpace } from '../parking/entities/parking-space.entity';
 import { ParkingFloorStatus } from '../parking/enum/parking-floor-status.enum';
@@ -23,6 +23,7 @@ import { CheckOutDto } from './dto/check-out.dto';
 import { CheckoutQuoteDto } from './dto/checkout-quote.dto';
 import { Ticket } from './entities/ticket.entity';
 import { TicketStatus } from './enum/ticket-status.enum';
+import { FilterTicketDto, FilterTicketPaginatedDto } from './dto/ticket.dto';
 
 @Injectable()
 export class TicketsService {
@@ -135,7 +136,6 @@ export class TicketsService {
         entranceAt: new Date(),
         exitAt: null,
         status: TicketStatus.ACTIVE,
-        amount: 0,
         rateAmount: rate.amount,
         vehicle,
         user,
@@ -152,8 +152,22 @@ export class TicketsService {
     return this.findOne(ticketId);
   }
 
-  async findAll(): Promise<Ticket[]> {
+  async findAll(filter: FilterTicketDto): Promise<Ticket[]> {
+    const where: FindOptionsWhere<Ticket> = {};
+    if (filter.status) {
+      where.status = filter.status;
+    }
+    if (filter.code) {
+      where.code = filter.code;
+    }
+    if (filter.fromDate) {
+      where.entranceAt = MoreThan(filter.fromDate);
+    }
+    if (filter.toDate) {
+      where.entranceAt = LessThan(filter.toDate) ;
+    }
     const tickets = await this.ticketsRepository.find({
+      where,
       relations: {
         vehicle: true,
         user: true,
@@ -167,8 +181,24 @@ export class TicketsService {
     return tickets.map((ticket) => this.toSafeTicket(ticket));
   }
 
-  async findPaginated(): Promise<{ data: Ticket[]; total: number }> {
+  async findPaginated(filter: FilterTicketPaginatedDto): Promise<{ data: Ticket[]; total: number }> {
+     const skip = (filter.page - 1) * filter.limit;
+     const take = filter.limit;
+    const where: FindOptionsWhere<Ticket> = {};
+    if (filter.status) {
+      where.status = filter.status;
+    }
+    if (filter.code) {
+      where.code = filter.code;
+    }
+    if (filter.fromDate) {
+      where.entranceAt = MoreThan(filter.fromDate);
+    }
+    if (filter.toDate) {
+      where.entranceAt = LessThan(filter.toDate);
+    }
     const [data, total] = await this.ticketsRepository.findAndCount({
+      where,
       relations: {
         vehicle: true,
         user: true,
@@ -177,6 +207,8 @@ export class TicketsService {
         rate: true,
         payment: true,
       },
+      skip,
+      take,
       order: { id: 'DESC' },
     });
     return { data, total };
@@ -258,7 +290,6 @@ export class TicketsService {
 
       loadedTicket.exitAt = exitAt;
       loadedTicket.status = TicketStatus.PAID;
-      loadedTicket.amount = Number(quote.amount);
       await ticketRepository.save(loadedTicket);
 
       spot.status = ParkingSpaceStatus.FREE;
@@ -310,7 +341,7 @@ export class TicketsService {
       .getRepository(ParkingSpace)
       .createQueryBuilder('space')
       .innerJoinAndSelect('space.floor', 'floor')
-      .innerJoinAndSelect('floor.parkingLot', 'parkingLot')
+      .innerJoinAndSelect('floor.lot', 'parkingLot')
       .where('parkingLot.id = :parkingLotId', { parkingLotId })
       .andWhere('space.status = :status', { status: ParkingSpaceStatus.FREE })
       .andWhere('space.type = :vehicleType', { vehicleType: vehicle.type })
@@ -319,6 +350,7 @@ export class TicketsService {
       .setLock('pessimistic_write', undefined, ['space'])
       .setOnLocked('skip_locked')
       .getOne();
+    console.log(space);
     if (!space) {
       throw new ConflictException('No hay espacios libres compatibles en este estacionamiento');
     }

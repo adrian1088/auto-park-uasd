@@ -14,9 +14,17 @@ import { ApiTags } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { FindPaymentDto, FindPaymentPaginatedDto, PaymentDto } from './dto/payment.dto';
+import {
+  FilterPaymentDto,
+  FilterPaymentPaginatedDto,
+  PaymentDto,
+} from './dto/payment.dto';
 import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
+import {
+  CurrentUser,
+  CurrentUserType,
+} from '../../shared/decorator/current-user.decorator';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -28,27 +36,31 @@ export class PaymentsController {
     type: 'single',
     status: HttpStatus.CREATED,
   })
-  create(@Body() createPaymentDto: CreatePaymentDto) {
-    return this.paymentsService.create(createPaymentDto);
+  create(
+    @Body() createPaymentDto: CreatePaymentDto,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    return this.paymentsService.create(createPaymentDto, user);
   }
 
   @Get()
   @ApiResponseType(PaymentDto, {
     type: 'array',
   })
-  findAll(@Query() query: FindPaymentDto) {
-    return this.paymentsService.findAll(query);
+  findAll(@Query() filter: FilterPaymentDto) {
+    return this.paymentsService.findAll(filter);
   }
+
   @Get('paginated')
   @ApiResponseType(PaymentDto, {
     type: 'paginated',
   })
   async findPaymentPaginated(
-    @Query() query: FindPaymentPaginatedDto,
+    @Query() filter: FilterPaymentPaginatedDto,
   ): Promise<ResponsePaginatedDto<PaymentDto>> {
-    const { page, limit } = query;
+    const { page, limit } = filter;
     const { data, total } =
-      await this.paymentsService.findPaymentPaginated(query);
+      await this.paymentsService.findPaymentPaginated(filter);
     return ResponsePaginatedDto.fromDataAndMeta({
       data: PaymentDto.fromEntities(data),
       page,
@@ -72,8 +84,9 @@ export class PaymentsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updatePaymentDto: UpdatePaymentDto,
+    @CurrentUser() user: CurrentUserType,
   ) {
-    return this.paymentsService.update(id, updatePaymentDto);
+    return this.paymentsService.update(id, updatePaymentDto, user);
   }
 
   @Delete(':id')

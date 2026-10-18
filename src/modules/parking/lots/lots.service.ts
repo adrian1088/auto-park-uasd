@@ -4,10 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { rejectNullValues } from '../../../shared/utils/reject-null-values';
 import { CreateParkingLotDto } from '../dto/create-parking-lot.dto';
-import { FindParkingLotsDto } from '../dto/parking-lot.dto';
+import { FindParkingLotDto, FindParkingLotPaginatedDto } from '../dto/parking-lot.dto';
 import { UpdateParkingLotDto } from '../dto/update-parking-lot.dto';
 import { ParkingLot } from '../entities/parking-lot.entity';
 import { ParkingSpace } from '../entities/parking-space.entity';
@@ -22,11 +22,19 @@ export class LotsService {
   ) {}
 
   createLot(dto: CreateParkingLotDto): Promise<ParkingLot> {
-    return this.lotsRepository.save(this.lotsRepository.create(dto));
+    return this.lotsRepository.save(this.lotsRepository.create({ ...dto }));
   }
 
-  async findAllLots(): Promise<ParkingLot[]> {
+  async findAllLots(query: FindParkingLotDto): Promise<ParkingLot[]> {
+    const { id, name, address, capacity } = query;
+    const where = {
+      ...(id !== undefined ? { id } : {}),
+      ...(name !== undefined ? { name: ILike(`%${name}%`) } : {}),
+      ...(address !== undefined ? { address: ILike(`%${address}%`) } : {}),
+      ...(capacity !== undefined ? { capacity } : {}),
+    };
     const lots = await this.lotsRepository.find({
+      where,
       relations: { floors: { spaces: true }, rates: true },
       order: { id: 'DESC' },
     });
@@ -53,11 +61,22 @@ export class LotsService {
   }
 
   async findLotsPaginated({
+    id,
+    name,
+    address,
+    capacity,
     page,
     limit,
-  }: FindParkingLotsDto): Promise<{ data: ParkingLot[]; total: number }> {
+  }: FindParkingLotPaginatedDto): Promise<{ data: ParkingLot[]; total: number }> {
     const skip = (page - 1) * limit;
+    const where = {
+      ...(id !== undefined ? { id } : {}),
+      ...(name !== undefined ? { name: ILike(`%${name}%`) } : {}),
+      ...(address !== undefined ? { address: ILike(`%${address}%`) } : {}),
+      ...(capacity !== undefined ? { capacity } : {}),
+    };
     const [data, total] = await this.lotsRepository.findAndCount({
+      where,
       relations: { floors: { spaces: true }, rates: true },
       order: { id: 'DESC' },
       skip,
@@ -97,17 +116,17 @@ export class LotsService {
     await this.lotsRepository.remove(lot);
   }
 
-  async countSpacesInLot(parkingLotId: number): Promise<number> {
+  async countSpacesInLot(lotId: number): Promise<number> {
     return this.spacesRepository
       .createQueryBuilder('space')
       .innerJoin('space.floor', 'floor')
-      .where('floor.parking_lot_id = :parkingLotId', { parkingLotId })
+      .where('floor.lot_id = :lotId', { lotId })
       .getCount();
   }
 
-  async ensureLotHasCapacity(parkingLotId: number): Promise<void> {
-    const lot = await this.findLotBasic(parkingLotId);
-    if ((await this.countSpacesInLot(parkingLotId)) >= lot.capacity) {
+  async ensureLotHasCapacity(lotId: number): Promise<void> {
+    const lot = await this.findLotBasic(lotId);
+    if ((await this.countSpacesInLot(lotId)) >= lot.capacity) {
       throw new ConflictException(
         'Se alcanzó la capacidad del estacionamiento',
       );

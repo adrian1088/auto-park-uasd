@@ -12,7 +12,7 @@ import { ParkingFloor } from '../entities/parking-floor.entity';
 import { ParkingSpace } from '../entities/parking-space.entity';
 import { ParkingFloorStatus } from '../enum/parking-floor-status.enum';
 import { LotsService } from '../lots/lots.service';
-import { FindParkingFloorsDto } from './dto/parking-floor.dto';
+import { FindParkingFloorPaginatedDto, FindParkingFloorsDto } from '../dto/parking-floor.dto';
 
 @Injectable()
 export class FloorsService {
@@ -36,10 +36,9 @@ export class FloorsService {
     );
   }
 
-  async findAllFloors(lotId?: number): Promise<ParkingFloor[]> {
+  async findAllFloors(query: FindParkingFloorsDto): Promise<ParkingFloor[]> {
     const floors = await this.floorsRepository.find({
-      where:
-        lotId === undefined ? {} : { lot: { id: lotId } },
+      where: query.lotId === undefined ? {} : { lot: { id: query.lotId } },
       relations: { lot: true, spaces: true },
       order: { lot: { id: 'ASC' }, floorNumber: 'ASC' },
     });
@@ -51,7 +50,10 @@ export class FloorsService {
     floorNumber,
     page,
     limit,
-  }: FindParkingFloorsDto): Promise<{ data: ParkingFloor[]; total: number}> {
+  }: FindParkingFloorPaginatedDto): Promise<{
+    data: ParkingFloor[];
+    total: number;
+  }> {
     const skip = (page - 1) * limit;
     const take = limit;
     const where = {

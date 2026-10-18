@@ -4,10 +4,12 @@ import {
   ApiResponseProperty,
   IntersectionType,
 } from '@nestjs/swagger';
-import { PaginationDto } from '../../../../shared/dtos/pagination.dto';
-import { ParkingSpaceType } from '../../enum/parking-space-type.enum';
-import { ParkingSpaceStatus } from '../../enum/parking-space-status.enum';
-import { ParkingFloorDto } from '../../floors/dto/parking-floor.dto';
+import { PaginationDto } from '../../../shared/dtos/pagination.dto';
+import { ParkingSpaceType } from '../enum/parking-space-type.enum';
+import { ParkingSpaceStatus } from '../enum/parking-space-status.enum';
+import { ParkingFloorDto } from './parking-floor.dto';
+import { IsInt, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ParkingSpaceDto {
   @ApiResponseProperty({
@@ -65,12 +67,18 @@ export class FindParkingSpacesDto {
     type: 'number',
     example: 1,
   })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   lotId?: number;
 
   @ApiPropertyOptional({
     type: 'number',
     example: 1,
   })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   floorId?: number;
 }
 

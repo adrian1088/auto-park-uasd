@@ -1,10 +1,16 @@
-import { ApiProperty, ApiPropertyOptional, ApiResponseProperty } from "@nestjs/swagger";
-import { ParkingFloor } from "../../entities/parking-floor.entity";
-import { PaginationDto } from "../../../../shared/dtos/pagination.dto";
-import { ParkingLotDto } from "../../dto/parking-lot.dto";
-import { ParkingFloorStatus } from "../../enum/parking-floor-status.enum";
-import { ParkingSpaceDto } from "../../spaces/dto/parking-space.dto";
-
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiResponseProperty,
+  IntersectionType,
+} from '@nestjs/swagger';
+import { ParkingFloor } from '../entities/parking-floor.entity';
+import { PaginationDto } from '../../../shared/dtos/pagination.dto';
+import { ParkingLotDto } from './parking-lot.dto';
+import { ParkingFloorStatus } from '../enum/parking-floor-status.enum';
+import { ParkingSpaceDto } from './parking-space.dto';
+import { IsInt, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ParkingFloorDto {
   @ApiResponseProperty({
@@ -51,7 +57,8 @@ export class ParkingFloorDto {
     dto.status = entity.status;
     dto.totalSpaceCount = entity.spaces?.length ?? 0;
     dto.lot = ParkingLotDto.fromEntity(entity.lot);
-    dto.spaces = entity.spaces?.map(space => ({ ...space, floor: undefined })) ?? [];
+    dto.spaces =
+      entity.spaces?.map((space) => ({ ...space, floor: undefined })) ?? [];
     return dto;
   }
 
@@ -60,17 +67,27 @@ export class ParkingFloorDto {
   }
 }
 
-export class FindParkingFloorsDto extends PaginationDto {
-  @ApiProperty({
+export class FindParkingFloorsDto {
+  @ApiPropertyOptional({
     type: 'number',
     example: 1,
   })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   lotId?: number;
 
   @ApiPropertyOptional({
     type: 'number',
     example: 1,
   })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
   floorNumber?: number;
-
 }
+
+export class FindParkingFloorPaginatedDto extends IntersectionType(
+  FindParkingFloorsDto,
+  PaginationDto,
+) {}

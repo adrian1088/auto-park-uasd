@@ -24,7 +24,7 @@ function getCurrentUser(request: any): CurrentUserType {
       name: 'Anonymous User',
       email: 'anonymous@domain.com',
       role: 'guest' as UserRole,
-      status: UserStatus.INACTIVE,
+      status: UserStatus.ACTIVE,
     };
   } else {
     return user as CurrentUserType;

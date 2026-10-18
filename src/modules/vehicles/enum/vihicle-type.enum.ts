@@ -1,9 +1,9 @@
 export enum VehicleType {
-    CAR = 'CAR',
-    TRUCK = 'TRUCK',
-    MOTORCYCLE = 'MOTORCYCLE',
-    VAN = 'VAN',
-    BUS = 'BUS',
-    SUV = 'SUV',
-    PICKUP = 'PICKUP',    
+  CAR = 'CAR', // Automóvil
+  TRUCK = 'TRUCK', // Camión
+  MOTORCYCLE = 'MOTORCYCLE', // Motocicleta
+  VAN = 'VAN', // Minivan|minibus
+  BUS = 'BUS', // Autobús
+  SUV = 'SUV', // Jeepeta
+  PICKUP = 'PICKUP', // Camioneta
 }

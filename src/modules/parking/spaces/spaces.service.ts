@@ -14,7 +14,7 @@ import { ParkingSpace } from '../entities/parking-space.entity';
 import { ParkingSpaceStatus } from '../enum/parking-space-status.enum';
 import { FloorsService } from '../floors/floors.service';
 import { LotsService } from '../lots/lots.service';
-import { FindParkingSpacesPaginatedDto } from './dto/parking-space.dto';
+import { FindParkingSpacesPaginatedDto } from '../dto/parking-space.dto';
 
 @Injectable()
 export class SpacesService {

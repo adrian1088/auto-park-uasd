@@ -1,4 +1,4 @@
-import { Column, OneToOne, Entity, ManyToOne, JoinColumn } from 'typeorm';
+import { Column, OneToOne, Entity, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
@@ -7,9 +7,23 @@ import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 import { Reservation } from '../../reservations/entities/reservation.entity';
 import { Rate } from '../../rates/entities/rate.entity';
 import { Payment } from '../../payments/entities/payment.entity';
+import { randomUUID } from 'node:crypto';
 
 @Entity({ name: 'tickets', comment: 'Tickets table' })
 export class Ticket extends AuditEntity {
+  @Column({
+    type: 'varchar',
+    length: 50,
+    unique: true,
+    comment: 'Ticket code',
+  })
+  code: string;
+  
+  @BeforeInsert()
+  generateCode() {
+    this.code = `TCK-${new Date().getFullYear()}-${randomUUID()}`;
+  }
+  
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
@@ -32,24 +46,19 @@ export class Ticket extends AuditEntity {
     type: 'decimal',
     precision: 10,
     scale: 2,
-    comment: 'Ticket amount',
-  })
-  amount: number;
-
-  @Column({
-    type: 'decimal',
-    precision: 10,
-    scale: 2,
     default: 0,
     comment: 'Hourly rate snapshot captured at check-in',
   })
   rateAmount: number;
 
+  // TODO: cambiar entidad Vehicle a solo almacenar el número de placa en lugar de la relación completa
   @ManyToOne(() => Vehicle, (vehicle) => vehicle.tickets)
   vehicle: Vehicle; // Muchos tickets pueden pertenecer a un solo vehículo
+  // @Column({ type: 'varchar', length: 20, comment: 'Vehicle plate number' })
+  // plateNumber: string;
 
   @ManyToOne(() => User, (user) => user.tickets)
-  user: User; // Muchos tickets pueden pertenecer a un solo usuario
+  user: User | null; // Muchos tickets pueden pertenecer a un solo usuario
 
   @ManyToOne(() => ParkingSpace, (spot) => spot.tickets)
   spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento

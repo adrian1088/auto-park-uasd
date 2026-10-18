@@ -28,10 +28,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getStatus() : 500;
     const message = this.getMessage(exception, statusCode);
 
-    this.logger.error(
-      'Exception caught',
-      exception instanceof Error ? exception.stack : '',
-    );
+    this.logger.error('Exception caught', message, exception instanceof Error ? exception.stack : '');
     httpAdapter.reply(
       response,
       {

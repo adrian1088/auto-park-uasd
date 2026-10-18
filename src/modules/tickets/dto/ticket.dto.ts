@@ -1,5 +1,8 @@
-import { ApiResponseProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from '@nestjs/swagger';
+import { PaginationDto } from '../../../shared/dtos/pagination.dto';
+import { Ticket } from '../entities/ticket.entity';
 import { TicketStatus } from '../enum/ticket-status.enum';
+import { IsOptional, IsString } from 'class-validator';
 
 export class TicketDto {
   @ApiResponseProperty({
@@ -7,6 +10,12 @@ export class TicketDto {
     example: 1,
   })
   id: number;
+
+  @ApiResponseProperty({
+    type: 'string',
+    example: 'TCK-2024-123e4567-e89b-12d3-a456-426614174000',
+  })
+  code: string;
 
   @ApiResponseProperty({
     type: 'string',
@@ -20,77 +29,87 @@ export class TicketDto {
   exitAt: Date | null;
 
   @ApiResponseProperty({
-    type: 'string',
+    enum: TicketStatus,
     example: TicketStatus.ACTIVE,
   })
   status: TicketStatus;
 
   @ApiResponseProperty({
     type: 'number',
-    example: 100,
+    example: 50.00,
   })
-  amount: number;
+  rateAmount: number;
 
-  @ApiResponseProperty({
-    type: 'string',
-    example: '50.00',
-  })
-  rateAmount: string;
+  // TODO: validar mas adelante
+  // @ApiResponseProperty({
+  //   type: 'number',
+  //   example: 1,
+  // })
+  // vehicleId: number;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  vehicleId: number;
+  // @ApiResponseProperty({
+  //   type: 'number',
+  //   example: 1,
+  // })
+  // userId: number;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  userId: number;
+  // @ApiResponseProperty({
+  //   type: 'number',
+  //   example: 1,
+  // })
+  // spotId: number;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  spotId: number;
+  // @ApiResponseProperty({
+  //   type: 'number',
+  //   example: 1,
+  // })
+  // reservationId: number | null;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  reservationId: number | null;
+  // @ApiResponseProperty({
+  //   type: 'number',
+  //   example: 1,
+  // })
+  // rateId: number;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  rateId: number;
 
-  @ApiResponseProperty({
-    type: 'number',
-    example: 1,
-  })
-  paymentId: number | null;
-
-  static fromEntity(ticket: any): TicketDto {
+  static fromEntity(ticket: Ticket): TicketDto {
     const dto = new TicketDto();
     dto.id = ticket.id;
+    dto.code = ticket.code;
     dto.entranceAt = ticket.entranceAt;
     dto.exitAt = ticket.exitAt;
     dto.status = ticket.status;
-    dto.amount = ticket.amount;
-    dto.rateAmount = ticket.rateAmount;
-    dto.vehicleId = ticket.vehicle?.id;
-    dto.userId = ticket.user?.id;
-    dto.spotId = ticket.spot?.id;
-    dto.reservationId = ticket.reservation?.id ?? null;
-    dto.rateId = ticket.rate?.id;
-    dto.paymentId = ticket.payment?.id ?? null;
+    dto.rateAmount = Number(ticket.rateAmount);
+    // dto.vehicleId = ticket.vehicle?.id;
+    // dto.userId = ticket.user?.id;
+    // dto.spotId = ticket.spot?.id;
+    // dto.reservationId = ticket.reservation?.id ?? null;
+    // dto.rateId = ticket.rate?.id;
     return dto;
   }
 
-  static fromEntities(tickets: any[]): TicketDto[] {
+  static fromEntities(tickets: Ticket[]): TicketDto[] {
     return tickets.map((ticket) => TicketDto.fromEntity(ticket));
   }
 }
+
+export class FilterTicketDto {
+  @ApiPropertyOptional({ type: 'string' })
+  @IsOptional()
+  @IsString()
+  code?: string;
+
+  @ApiPropertyOptional({ type: 'string', format: 'date-time' })
+  @IsOptional()
+  fromDate?: Date;
+
+  @ApiPropertyOptional({ type: 'string', format: 'date-time' })
+  @IsOptional()
+  toDate?: Date;
+  
+  @ApiPropertyOptional({ enum: TicketStatus })
+  @IsOptional()
+  status?: TicketStatus;
+}
+
+export class FilterTicketPaginatedDto  extends IntersectionType(FilterTicketDto, PaginationDto) {}

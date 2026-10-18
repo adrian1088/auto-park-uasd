@@ -1,6 +1,8 @@
-import { ApiResponseProperty } from "@nestjs/swagger";
+import { ApiResponseProperty, IntersectionType, ApiPropertyOptional } from "@nestjs/swagger";
 import { PaginationDto } from "../../../shared/dtos/pagination.dto";
 import { ParkingLot } from "../entities/parking-lot.entity";
+import { IsInt, IsOptional, IsString } from "class-validator";
+import { Type } from "class-transformer";
 
 export class ParkingLotDto {
   @ApiResponseProperty({
@@ -46,4 +48,43 @@ export class ParkingLotDto {
   }
 }
 
-export class FindParkingLotsDto extends PaginationDto {}
+export class FindParkingLotDto {
+  @ApiPropertyOptional({
+    type: 'number',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  id?: number;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    example: 'Main Street Parking',
+  })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    example: '123 Main St, City, Country',
+  })
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @ApiPropertyOptional({
+    type: 'number',
+    example: 50,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  capacity?: number;
+}
+
+export class FindParkingLotPaginatedDto extends IntersectionType(
+  FindParkingLotDto,
+  PaginationDto,
+) {}  
