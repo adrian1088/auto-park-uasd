@@ -24,5 +24,6 @@ import { Payment } from '../payments/entities/payment.entity';
   ],
   controllers: [TicketsController],
   providers: [TicketsService],
+  exports: [TicketsService],
 })
 export class TicketsModule {}

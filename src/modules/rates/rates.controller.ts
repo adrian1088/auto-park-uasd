@@ -15,9 +15,8 @@ import { Rate } from './entities/rate.entity';
 import { RateType } from './enum/rate-type.enum';
 import { RatesService } from './rates.service';
 import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
-import { RateDto } from './dto/rate.dto';
+import { FilterRateDto, FilterRatePaginatedDto, RateDto } from './dto/rate.dto';
 import { ApiTags } from '@nestjs/swagger';
-import { QueryRateDto } from './dto/query-reate.dto';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
 
 @ApiTags('Rates')
@@ -48,14 +47,13 @@ export class RatesController {
     type: 'array',
   })
   async findAll(
-    @Query('parkingLotId') parkingLotId?: string,
+    @Query() filter: FilterRateDto,
     @Query('type') type?: RateType,
   ): Promise<RateDto[]> {
     const rates = await this.ratesService.findAll(
-      parkingLotId === undefined ? undefined : Number(parkingLotId),
+      filter.parkingLotId === undefined ? undefined : Number(filter.parkingLotId),
       type,
     );
-
     return RateDto.fromEntities(rates);
   }
 
@@ -64,9 +62,9 @@ export class RatesController {
     type: 'paginated',
   })
   async findPaginated(
-    @Query() query: QueryRateDto,
+    @Query() filter: FilterRatePaginatedDto,
   ): Promise<ResponsePaginatedDto<RateDto>> {
-    const { parkingLotId: rawParkingLotId, type, page, limit } = query;
+    const { parkingLotId: rawParkingLotId, type, page, limit } = filter;
     const parkingLotId =
       rawParkingLotId === undefined ? undefined : Number(rawParkingLotId);
     const { data, total } = await this.ratesService.findPaginated(

@@ -21,6 +21,7 @@ import { DatabaseConfig } from '../config/database.config';
           database: databaseConfig.database,
           autoLoadEntities: true,
           synchronize: databaseConfig.synchronize,
+          logging: ['error','query','warn'],
           namingStrategy: new SnakeCaseNamingStrategy(),
           extra: {
             max: databaseConfig.maxConnections,

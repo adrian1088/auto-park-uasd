@@ -14,19 +14,31 @@ export class Payment extends AuditEntity {
   })
   amount: number;
 
-  @Column({ type: 'timestamp', comment: 'Payment date' })
+  @Column({
+    type: 'timestamp',
+    comment: 'Payment date',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
   paymentDate: Date;
 
   @Column({ type: 'enum', enum: PaymentMethod, comment: 'Payment method' })
   paymentMethod: PaymentMethod;
 
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    comment: 'Transaction reference for the payment',
+  })
+  transactionReference: string | null;
+
   @ManyToOne(() => User, (user) => user.payments)
-  user: User;
+  user: User | null;
 
   @OneToOne(() => Ticket, (ticket) => ticket.payment, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'ticket_id' })
-  ticket: Ticket | null;
+  ticket: Ticket;
 }

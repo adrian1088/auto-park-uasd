@@ -19,7 +19,7 @@ import {
   FindParkingSpacesDto,
   FindParkingSpacesPaginatedDto,
   ParkingSpaceDto,
-} from './dto/parking-space.dto';
+} from '../dto/parking-space.dto';
 import { ResponsePaginatedDto } from '../../../shared/dtos/response-paginated.dto';
 
 @ApiTags('Parking Spaces')

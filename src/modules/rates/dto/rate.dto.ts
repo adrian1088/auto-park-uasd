@@ -1,6 +1,9 @@
-import { ApiResponseProperty } from "@nestjs/swagger";
+import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from "@nestjs/swagger";
 import { Rate } from "../entities/rate.entity";
 import { RateType } from "../enum/rate-type.enum";
+import { Type } from "class-transformer";
+import { PaginationDto } from "../../../shared/dtos/pagination.dto";
+import { IsEnum, IsNumber, IsOptional } from "class-validator";
 
 export class RateDto {
   @ApiResponseProperty({ type: Number, example: 1 })
@@ -41,3 +44,24 @@ export class RateDto {
     return entities.map(entity => RateDto.fromEntity(entity));
   }
 }
+
+export class FilterRateDto {
+  @ApiPropertyOptional({ description: 'ID del estacionamiento' })
+  @Type(() => Number)
+  @IsNumber()
+  @IsOptional()
+  parkingLotId?: number;
+
+  @ApiPropertyOptional({
+    enum: RateType,
+    description: 'Tipo de tarifa',
+  })
+  @IsEnum(RateType)
+  @IsOptional()
+  type?: RateType;
+}
+
+export class FilterRatePaginatedDto extends IntersectionType(
+  FilterRateDto,
+  PaginationDto,
+) {}

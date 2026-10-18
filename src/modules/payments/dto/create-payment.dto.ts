@@ -13,6 +13,16 @@ import { PaymentMethod } from '../enum/payment-method.enum';
 export class CreatePaymentDto {
   @ApiProperty({
     type: Number,
+    minimum: 1,
+    example: 1,
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  ticketId?: number;
+
+  @ApiProperty({
+    type: Number,
     minimum: 0.01,
     maximum: 99999999.99,
     example: 100.0,
@@ -34,10 +44,4 @@ export class CreatePaymentDto {
   @ApiProperty({ enum: PaymentMethod, example: PaymentMethod.CASH })
   @IsEnum(PaymentMethod)
   paymentMethod: PaymentMethod;
-
-  @ApiProperty({ type: Number, minimum: 1, example: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  userId: number;
 }
