@@ -2,7 +2,7 @@ import { Column, OneToOne, Entity, ManyToOne, JoinColumn, BeforeInsert } from 't
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
-import { User } from '../../users/entities/users.entity';
+import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 import { Reservation } from '../../reservations/entities/reservation.entity';
 import { Rate } from '../../rates/entities/rate.entity';
@@ -57,8 +57,8 @@ export class Ticket extends AuditEntity {
   // @Column({ type: 'varchar', length: 20, comment: 'Vehicle plate number' })
   // plateNumber: string;
 
-  @ManyToOne(() => User, (user) => user.tickets)
-  user: User | null; // Muchos tickets pueden pertenecer a un solo usuario
+  @ManyToOne(() => UserEntity, (user) => user.tickets)
+  user: UserEntity | null; // Muchos tickets pueden pertenecer a un solo usuario
 
   @ManyToOne(() => ParkingSpace, (spot) => spot.tickets)
   spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento

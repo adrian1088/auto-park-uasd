@@ -18,14 +18,14 @@ jest.mock('@nestjs/typeorm', () => ({
 
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { User } from './entities/users.entity';
+import { UserEntity } from './entities/users.entity';
 import { UserRole } from './enums/users-role.enum';
 import { UserStatus } from './enums/users-status.enum';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let repository: Partial<Repository<User>>;
+  let repository: Partial<Repository<UserEntity>>;
   const user = {
     id: 1,
     createdAt: new Date('2026-01-01'),
@@ -36,17 +36,17 @@ describe('UsersService', () => {
     phone: '809-555-0101',
     role: UserRole.USER,
     status: UserStatus.ACTIVE,
-  } as User;
+  } as UserEntity;
 
   beforeEach(() => {
     repository = {
-      create: jest.fn((data: User) => data),
-      save: jest.fn(async (data: User) => data),
+      create: jest.fn((data: UserEntity) => data),
+      save: jest.fn(async (data: UserEntity) => data),
       findOneBy: jest.fn().mockResolvedValue(null),
       findOne: jest.fn().mockResolvedValue(user),
       findAndCount: jest.fn().mockResolvedValue([[user], 21]),
-    } as unknown as Partial<Repository<User>>;
-    service = new UsersService(repository as Repository<User>);
+    } as unknown as Partial<Repository<UserEntity>>;
+    service = new UsersService(repository as Repository<UserEntity>);
   });
 
   it('creates a user without returning the password', async () => {

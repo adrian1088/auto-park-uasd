@@ -3,13 +3,13 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Payment } from './entities/payment.entity';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { TicketsModule } from '../tickets/tickets.module';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, User]),
+    TypeOrmModule.forFeature([Payment, UserEntity]),
     TicketsModule,
     UsersModule,
   ],

@@ -15,7 +15,7 @@ import { PaymentMethod } from '../payments/enum/payment-method.enum';
 import { Rate } from '../rates/entities/rate.entity';
 import { RateType } from '../rates/enum/rate-type.enum';
 import { Reservation } from '../reservations/entities/reservation.entity';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { UserStatus } from '../users/enums/users-status.enum';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CheckInDto } from './dto/check-in.dto';
@@ -89,7 +89,7 @@ export class TicketsService {
       if (!vehicle) {
         throw new NotFoundException('Vehículo no encontrado');
       }
-      const user = await manager.getRepository(User).findOneBy({ id: effectiveUserId });
+      const user = await manager.getRepository(UserEntity).findOneBy({ id: effectiveUserId });
       if (!user) {
         throw new NotFoundException('Usuario no encontrado');
       }
@@ -415,7 +415,7 @@ export class TicketsService {
   private toSafeTicket(ticket: Ticket): Ticket {
     if (ticket.user) {
       const { password: _password, ...publicUser } = ticket.user;
-      ticket.user = publicUser as User;
+      ticket.user = publicUser as UserEntity;
     }
     return ticket;
   }

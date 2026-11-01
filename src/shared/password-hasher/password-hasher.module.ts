@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EncryptService } from './encrypt.service';
+import { PasswordHasherService } from './password-hasher.service';
 import encryptConfig from '../../config/encrypt.config';
 
 @Module({
   imports: [ConfigModule.forFeature(encryptConfig)],
-  providers: [EncryptService],
-  exports: [EncryptService],
+  providers: [PasswordHasherService],
+  exports: [PasswordHasherService],
 })
-export class EncryptModule {}
+export class PasswordHasherModule {}

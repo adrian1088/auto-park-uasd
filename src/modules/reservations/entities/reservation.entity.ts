@@ -1,6 +1,6 @@
 import { Column, Entity, ManyToOne, OneToOne } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { User } from '../../users/entities/users.entity';
+import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 import { Vehicle } from '../../vehicles/entities/vehicle.entity';
 import { Ticket } from '../../tickets/entities/ticket.entity';
@@ -15,8 +15,8 @@ export class Reservation extends AuditEntity {
 
   // Mucho a uno:
   // Muchas reservas pueden ser hechas por un solo usuario
-  @ManyToOne(() => User, (user) => user.reservations)
-  user: User;
+  @ManyToOne(() => UserEntity, (user) => user.reservations)
+  user: UserEntity;
   
   // Mucho a uno:
   // Muchos espacios de estacionamiento pueden tener muchas reservas

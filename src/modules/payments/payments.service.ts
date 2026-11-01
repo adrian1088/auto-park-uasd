@@ -7,7 +7,7 @@ import {
 import { TicketsService } from '../tickets/tickets.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { Payment } from './entities/payment.entity';
@@ -88,7 +88,11 @@ export class PaymentsService {
     return this.toSafePayment(payment);
   }
 
-  async update(id: number, dto: UpdatePaymentDto, currentUser: CurrentUserType): Promise<Payment> {
+  async update(
+    id: number,
+    dto: UpdatePaymentDto,
+    currentUser: CurrentUserType,
+  ): Promise<Payment> {
     if (
       Object.entries(dto).some(
         ([field, value]) => value === null && field !== 'ticketId',
@@ -142,7 +146,7 @@ export class PaymentsService {
   }
 
   private async findUser(id: number): Promise<PublicUser> {
-    const user = await this.usersService.findOne(id);
+    const user = await this.usersService.findOne({ id });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
@@ -152,11 +156,11 @@ export class PaymentsService {
   private toSafePayment(payment: Payment): Payment {
     if (payment.user) {
       const { password: _password, ...publicUser } = payment.user;
-      payment.user = publicUser as User;
+      payment.user = publicUser as UserEntity;
     }
     if (payment.ticket?.user) {
       const { password: _password, ...publicUser } = payment.ticket.user;
-      payment.ticket.user = publicUser as User;
+      payment.ticket.user = publicUser as UserEntity;
     }
     return payment;
   }

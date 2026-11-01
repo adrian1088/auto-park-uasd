@@ -8,7 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ParkingSpace } from '../parking/entities/parking-space.entity';
 import { Ticket } from '../tickets/entities/ticket.entity';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { Vehicle } from '../vehicles/entities/vehicle.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -146,8 +146,8 @@ export class ReservationsService {
     return parkingSpace;
   }
 
-  private async findUser(manager: EntityManager, id: number): Promise<User> {
-    const user = await manager.getRepository(User).findOneBy({ id });
+  private async findUser(manager: EntityManager, id: number): Promise<UserEntity> {
+    const user = await manager.getRepository(UserEntity).findOneBy({ id });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
@@ -220,7 +220,7 @@ export class ReservationsService {
   private toSafeReservation(reservation: Reservation): Reservation {
     if (reservation.user) {
       const { password: _password, ...publicUser } = reservation.user;
-      reservation.user = publicUser as User;
+      reservation.user = publicUser as UserEntity;
     }
     return reservation;
   }

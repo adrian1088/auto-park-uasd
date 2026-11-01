@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import { Vehicle } from './entities/vehicle.entity';
@@ -16,8 +16,8 @@ export class VehiclesService {
   constructor(
     @InjectRepository(Vehicle)
     private readonly vehiclesRepository: Repository<Vehicle>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
@@ -103,7 +103,7 @@ export class VehiclesService {
     return vehicle;
   }
 
-  private async findUser(id: number): Promise<User> {
+  private async findUser(id: number): Promise<UserEntity> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -126,7 +126,7 @@ export class VehiclesService {
   private toSafeVehicle(vehicle: Vehicle): Vehicle {
     if (vehicle.user) {
       const { password: _password, ...publicUser } = vehicle.user;
-      vehicle.user = publicUser as User;
+      vehicle.user = publicUser as UserEntity;
     }
     return vehicle;
   }

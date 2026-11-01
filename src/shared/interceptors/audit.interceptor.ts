@@ -9,7 +9,7 @@ import { Observable, tap } from 'rxjs';
 import { AuditConfigService } from '../../modules/audit-logs/audit-config.service';
 import { AuditService } from '../../modules/audit-logs/audit.service';
 import { AuditLog } from '../../modules/audit-logs/entities/audit-log.entity';
-import { User } from '../../modules/users/entities/users.entity';
+import { UserEntity } from '../../modules/users/entities/users.entity';
 import {
   isAuthenticationRoute,
   sanitizeSensitiveData,
@@ -44,7 +44,7 @@ export class AuditInterceptor implements NestInterceptor {
     const userId = user?.id ?? user?.sub;
     const action = `${method} ${path}`;
     const auditPayload: Partial<AuditLog> = {
-      user: userId == null ? undefined : ({ id: userId } as User),
+      user: userId == null ? undefined : ({ id: userId } as UserEntity),
       action,
       payload: isAuthenticationRoute(path)
         ? null
