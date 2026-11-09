@@ -3,9 +3,9 @@ import { UserStatus } from '../enums/users-status.enum';
 import { UserRole } from '../enums/users-role.enum';
 import { UserSource } from '../enums/user-resource.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { Vehicle } from '../../vehicles/entities/vehicle.entity';
-import { Reservation } from '../../reservations/entities/reservation.entity';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
+import { ReservationEntity } from '../../reservations/entities/reservation.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { AuditLog } from '../../audit-logs/entities/audit-log.entity';
 
@@ -66,14 +66,11 @@ export class UserEntity extends AuditEntity {
   })
   activatedAt?: Date;
 
-  @OneToMany(() => Vehicle, (vehicle) => vehicle.user)
-  vehicles: Vehicle[];
+  @OneToMany(() => ReservationEntity, (reservation) => reservation.user)
+  reservations: ReservationEntity[];
 
-  @OneToMany(() => Reservation, (reservation) => reservation.user)
-  reservations: Reservation[];
-
-  @OneToMany(() => Ticket, (ticket) => ticket.user)
-  tickets: Ticket[];
+  @OneToMany(() => TicketEntity, (ticket) => ticket.user)
+  tickets: TicketEntity[];
 
   @OneToMany(() => Payment, (payment) => payment.user)
   payments: Payment[];

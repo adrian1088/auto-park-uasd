@@ -1,16 +1,16 @@
 import { Column, OneToOne, Entity, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
 import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
-import { Reservation } from '../../reservations/entities/reservation.entity';
-import { Rate } from '../../rates/entities/rate.entity';
+import { ReservationEntity } from '../../reservations/entities/reservation.entity';
+import { RateEntity } from '../../rates/entities/rate.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { randomUUID } from 'node:crypto';
 
 @Entity({ name: 'tickets', comment: 'Tickets table' })
-export class Ticket extends AuditEntity {
+export class TicketEntity extends AuditEntity {
   @Column({
     type: 'varchar',
     length: 50,
@@ -51,11 +51,11 @@ export class Ticket extends AuditEntity {
   })
   rateAmount: number;
 
-  // TODO: cambiar entidad Vehicle a solo almacenar el número de placa en lugar de la relación completa
-  @ManyToOne(() => Vehicle, (vehicle) => vehicle.tickets)
-  vehicle: Vehicle; // Muchos tickets pueden pertenecer a un solo vehículo
-  // @Column({ type: 'varchar', length: 20, comment: 'Vehicle plate number' })
-  // plateNumber: string;
+  @Column({ type: 'int', nullable: true, comment: 'User ID' })
+  userId: number | null;
+
+  @Column({ type: 'varchar', length: 20, comment: 'Vehicle plate number' })
+  vehiclePlateNumber: string;
 
   @ManyToOne(() => UserEntity, (user) => user.tickets)
   user: UserEntity | null; // Muchos tickets pueden pertenecer a un solo usuario
@@ -63,18 +63,18 @@ export class Ticket extends AuditEntity {
   @ManyToOne(() => ParkingSpace, (spot) => spot.tickets)
   spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento
 
-  @OneToOne(() => Reservation, (reservation) => reservation.ticket, {
+  @OneToOne(() => ReservationEntity, (reservation) => reservation.ticket, {
     nullable: true,
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'reservation_id' })
-  reservation: Reservation | null;
+  reservation: ReservationEntity | null;
 
-  @ManyToOne(() => Rate, (rate) => rate.tickets, {
+  @ManyToOne(() => RateEntity, (rate) => rate.tickets, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  rate: Rate | null;
+  rate: RateEntity | null;
 
   @OneToOne(() => Payment, (payment) => payment.ticket)
   payment: Payment | null;

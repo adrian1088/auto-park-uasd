@@ -4,6 +4,9 @@ export class CheckoutQuoteDto {
   @ApiResponseProperty({ example: 42 })
   ticketId: number;
 
+  @ApiResponseProperty({ example: 'ABC123' })
+  ticketCode: string;
+
   @ApiResponseProperty({ type: Date })
   entranceAt: Date;
 

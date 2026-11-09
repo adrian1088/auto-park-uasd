@@ -19,7 +19,7 @@ export class CreatePaymentDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  ticketId?: number;
+  ticketId: number;
 
   @ApiProperty({
     type: Number,

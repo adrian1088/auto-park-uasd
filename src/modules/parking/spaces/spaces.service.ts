@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsOrder, FindOptionsWhere, Repository } from 'typeorm';
 import { rejectNullValues } from '../../../shared/utils/reject-null-values';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 import { TicketStatus } from '../../tickets/enum/ticket-status.enum';
 import { CreateParkingSpaceDto } from '../dto/create-parking-space.dto';
 import { UpdateParkingSpaceDto } from '../dto/update-parking-space.dto';
@@ -21,8 +21,8 @@ export class SpacesService {
   constructor(
     @InjectRepository(ParkingSpace)
     private readonly spacesRepository: Repository<ParkingSpace>,
-    @InjectRepository(Ticket)
-    private readonly ticketsRepository: Repository<Ticket>,
+    @InjectRepository(TicketEntity)
+    private readonly ticketsRepository: Repository<TicketEntity>,
     private readonly floorsService: FloorsService,
     private readonly lotsService: LotsService,
   ) {}

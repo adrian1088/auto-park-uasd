@@ -28,8 +28,20 @@ export class PaymentsService {
     dto: CreatePaymentDto,
     currentUser: CurrentUserType,
   ): Promise<Payment> {
+    const quote = await this.ticketsService.checkoutQuote(dto.ticketId);
+    const paymentCents = Math.round(dto.amount * 100);
+    const totalCents = Math.round(Number(quote.amount) * 100);
+    if (paymentCents !== totalCents) {
+      throw new BadRequestException(
+        `El pago debe cubrir el importe total del ticket (${quote.amount}); no se permiten pagos parciales ni sobrepagos`,
+      );
+    }
+
     const user = await this.findUser(currentUser.id);
     const ticket = await this.ticketsService.findOne(dto.ticketId);
+    if (ticket.payment) {
+      throw new ConflictException('El ticket ya tiene un pago registrado');
+    }
     const payment = this.paymentsRepository.create({
       amount: dto.amount,
       // paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),

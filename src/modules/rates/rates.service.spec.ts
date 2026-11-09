@@ -4,13 +4,13 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { ParkingLot } from '../parking/entities/parking-lot.entity';
-import { Rate } from './entities/rate.entity';
+import { RateEntity } from './entities/rate.entity';
 import { RateType } from './enum/rate-type.enum';
 import { RatesService } from './rates.service';
 
 describe('RatesService', () => {
   let service: RatesService;
-  let rateRepository: Partial<Repository<Rate>>;
+  let rateRepository: Partial<Repository<RateEntity>>;
   let parkingLotRepository: Partial<Repository<ParkingLot>>;
   let queryBuilder: {
     where: jest.Mock;
@@ -28,15 +28,15 @@ describe('RatesService', () => {
     queryBuilder.andWhere.mockReturnValue(queryBuilder);
 
     rateRepository = {
-      create: jest.fn((rate: unknown) => rate as Rate),
+      create: jest.fn((rate: unknown) => rate as RateEntity),
       createQueryBuilder: jest.fn(() => queryBuilder as never),
-      save: jest.fn(async (rate: unknown) => rate as Rate),
-    } as unknown as Partial<Repository<Rate>>;
+      save: jest.fn(async (rate: unknown) => rate as RateEntity),
+    } as unknown as Partial<Repository<RateEntity>>;
     parkingLotRepository = {
       findOneBy: jest.fn(async (_criteria: unknown) => ({ id: 7 }) as ParkingLot),
     } as unknown as Partial<Repository<ParkingLot>>;
     service = new RatesService(
-      rateRepository as unknown as Repository<Rate>,
+      rateRepository as unknown as Repository<RateEntity>,
       parkingLotRepository as unknown as Repository<ParkingLot>,
     );
   });

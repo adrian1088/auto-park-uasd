@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 import { ParkingSpace } from '../entities/parking-space.entity';
 import { FloorsService } from '../floors/floors.service';
 import { LotsService } from '../lots/lots.service';
@@ -19,7 +19,7 @@ describe('SpacesService', () => {
           provide: getRepositoryToken(ParkingSpace),
           useValue: spacesRepository,
         },
-        { provide: getRepositoryToken(Ticket), useValue: {} },
+        { provide: getRepositoryToken(TicketEntity), useValue: {} },
         { provide: FloorsService, useValue: {} },
         { provide: LotsService, useValue: {} },
       ],

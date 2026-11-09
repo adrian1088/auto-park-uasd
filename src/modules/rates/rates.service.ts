@@ -9,19 +9,19 @@ import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ParkingLot } from '../parking/entities/parking-lot.entity';
 import { CreateRateDto } from './dto/create-rate.dto';
 import { UpdateRateDto } from './dto/update-rate.dto';
-import { Rate } from './entities/rate.entity';
+import { RateEntity } from './entities/rate.entity';
 import { RateType } from './enum/rate-type.enum';
 
 @Injectable()
 export class RatesService {
   constructor(
-    @InjectRepository(Rate)
-    private readonly ratesRepository: Repository<Rate>,
+    @InjectRepository(RateEntity)
+    private readonly ratesRepository: Repository<RateEntity>,
     @InjectRepository(ParkingLot)
     private readonly parkingLotsRepository: Repository<ParkingLot>,
   ) {}
 
-  async create(createRateDto: CreateRateDto): Promise<Rate> {
+  async create(createRateDto: CreateRateDto): Promise<RateEntity> {
     const parkingLot = await this.parkingLotsRepository.findOneBy({
       id: createRateDto.parkingLotId,
     });
@@ -42,7 +42,7 @@ export class RatesService {
     return this.ratesRepository.save(rate);
   }
 
-  findAll(parkingLotId?: number, type?: RateType): Promise<Rate[]> {
+  findAll(parkingLotId?: number, type?: RateType): Promise<RateEntity[]> {
     if (parkingLotId !== undefined && (!Number.isInteger(parkingLotId) || parkingLotId < 1)) {
       throw new BadRequestException('parkingLotId must be a positive integer');
     }
@@ -61,7 +61,7 @@ export class RatesService {
     return query.getMany();
   }
 
-  async findOne(id: number): Promise<Rate> {
+  async findOne(id: number): Promise<RateEntity> {
     const rate = await this.ratesRepository.findOne({
       where: { id },
       relations: { parkingLot: true },
@@ -72,7 +72,7 @@ export class RatesService {
     return rate;
   }
 
-  async findCurrent(parkingLotId: number, type: RateType): Promise<Rate> {
+  async findCurrent(parkingLotId: number, type: RateType): Promise<RateEntity> {
     if (!Number.isInteger(parkingLotId) || parkingLotId < 1) {
       throw new BadRequestException('El ID del estacionamiento debe ser un número entero positivo');
     }
@@ -99,7 +99,7 @@ export class RatesService {
     type?: RateType,
     page: number = 1,
     limit: number = 10,
-  ): Promise<{ data: Rate[]; total: number }> {
+  ): Promise<{ data: RateEntity[]; total: number }> {
     const query = await this.ratesRepository
       .createQueryBuilder('rate')
       .leftJoinAndSelect('rate.parkingLot', 'parkingLot')
@@ -121,7 +121,7 @@ export class RatesService {
     return { data, total };
   }
   
-  async update(id: number, updateRateDto: UpdateRateDto): Promise<Rate> {
+  async update(id: number, updateRateDto: UpdateRateDto): Promise<RateEntity> {
     const rate = await this.findOne(id);
     const parkingLotId = updateRateDto.parkingLotId ?? rate.parkingLot.id;
     const parkingLot = await this.parkingLotsRepository.findOneBy({ id: parkingLotId });
@@ -167,7 +167,7 @@ export class RatesService {
     }
   }
 
-  private async ensureNoOverlap(rate: Rate, excludedId?: number): Promise<void> {
+  private async ensureNoOverlap(rate: RateEntity, excludedId?: number): Promise<void> {
     const query = this.ratesRepository
       .createQueryBuilder('existing')
       .where('existing.parking_lot_id = :parkingLotId', {
@@ -188,7 +188,7 @@ export class RatesService {
     await this.throwIfOverlap(query);
   }
 
-  private async throwIfOverlap(query: SelectQueryBuilder<Rate>): Promise<void> {
+  private async throwIfOverlap(query: SelectQueryBuilder<RateEntity>): Promise<void> {
     if (await query.getExists()) {
       throw new ConflictException('Los periodos de validez de la tarifa no pueden superponerse para el mismo estacionamiento y tipo');
     }

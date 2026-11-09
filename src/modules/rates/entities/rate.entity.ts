@@ -2,11 +2,11 @@ import { Column, Entity, Index, ManyToOne, OneToMany } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { ParkingLot } from '../../parking/entities/parking-lot.entity';
 import { RateType } from '../enum/rate-type.enum';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 
 @Entity({ name: 'rates', comment: 'Historical parking rates' })
 @Index('idx_rates_lookup', ['parkingLot', 'type', 'validFrom', 'validTo'])
-export class Rate extends AuditEntity {
+export class RateEntity extends AuditEntity {
   @Column({ type: 'enum', enum: RateType, comment: 'Rate billing period' })
   type: RateType;
 
@@ -28,6 +28,6 @@ export class Rate extends AuditEntity {
   })
   parkingLot: ParkingLot;
 
-  @OneToMany(() => Ticket, (ticket) => ticket.rate)
-  tickets: Ticket[];
+  @OneToMany(() => TicketEntity, (ticket) => ticket.rate)
+  tickets: TicketEntity[];
 }

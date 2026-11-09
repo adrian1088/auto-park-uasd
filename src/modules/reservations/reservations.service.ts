@@ -7,64 +7,75 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository } from 'typeorm';
 import { ParkingSpace } from '../parking/entities/parking-space.entity';
-import { Ticket } from '../tickets/entities/ticket.entity';
+import { TicketEntity } from '../tickets/entities/ticket.entity';
 import { UserEntity } from '../users/entities/users.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
+import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { Reservation } from './entities/reservation.entity';
+import { ReservationEntity } from './entities/reservation.entity';
+import { CurrentUserType } from '../../shared/decorator/current-user.decorator';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     private readonly dataSource: DataSource,
-    @InjectRepository(Reservation)
-    private readonly reservationsRepository: Repository<Reservation>,
+    @InjectRepository(ReservationEntity)
+    private readonly reservationsRepository: Repository<ReservationEntity>,
   ) {}
 
-  async create(dto: CreateReservationDto): Promise<Reservation> {
+  async create(
+    dto: CreateReservationDto,
+    currentUser: CurrentUserType,
+  ): Promise<ReservationEntity> {
     const reservationId = await this.dataSource.transaction(async (manager) => {
       const startTime = this.parseDate(dto.startTime, 'startTime');
       const endTime = this.parseDate(dto.endTime, 'endTime');
       this.validatePeriod(startTime, endTime);
 
-      const parkingSpace = await this.lockParkingSpace(manager, dto.parkingSpaceId);
-      const user = await this.findUser(manager, dto.userId);
-      const vehicle = dto.vehicleId == null
-        ? null
-        : await this.findVehicle(manager, dto.vehicleId);
-      this.validateVehicleCompatibility(vehicle, parkingSpace);
-      await this.ensureNoOverlap(
+      const parkingSpace = await this.lockParkingSpace(
         manager,
-        parkingSpace.id,
-        startTime,
-        endTime,
+        dto.parkingSpaceId,
       );
+      const user = await this.findUser(manager, currentUser.id);
+      const vehicle =
+        dto.vehiclePlateNumber == null
+          ? null
+          : await this.findVehicle(manager, dto.vehiclePlateNumber);
+      this.validateVehicleCompatibility(vehicle, parkingSpace);
+      await this.ensureNoOverlap(manager, parkingSpace.id, startTime, endTime);
 
-      const reservation = manager.getRepository(Reservation).create({
+      const reservation = manager.getRepository(ReservationEntity).create({
         startTime,
         endTime,
-        user,
-        parkingSpace,
-        vehicle,
+        userId: user.id,
+        parkingSpaceId: parkingSpace.id,
+        vehiclePlateNumber: dto.vehiclePlateNumber,
       });
-      return (await manager.getRepository(Reservation).save(reservation)).id;
+      return (await manager.getRepository(ReservationEntity).save(reservation)).id;
     });
     return this.findOne(reservationId);
   }
 
-  async findAll(): Promise<Reservation[]> {
-    const reservations = await this.reservationsRepository.find({
-      relations: { user: true, parkingSpace: { floor: { lot: true } }, vehicle: true },
+  async findPaginated({ skip = 0, take = 10 }: { skip?: number; take?: number }): Promise<{ data: ReservationEntity[]; total: number }> {
+    const [reservations, total] = await this.reservationsRepository.findAndCount({
+      relations: { user: true, parkingSpace: { floor: { lot: true } } },
       order: { startTime: 'ASC', id: 'DESC' },
+      skip,
+      take,
     });
-    return reservations.map((reservation) => this.toSafeReservation(reservation));
+    return {
+      data: reservations.map((reservation) => this.toSafeReservation(reservation)),
+      total,
+    };
   }
 
-  async findOne(id: number): Promise<Reservation> {
+  async findOne(id: number): Promise<ReservationEntity> {
     const reservation = await this.reservationsRepository.findOne({
       where: { id },
-      relations: { user: true, parkingSpace: { floor: { lot: true } }, vehicle: true },
+      relations: {
+        user: true,
+        parkingSpace: { floor: { lot: true } },
+      },
     });
     if (!reservation) {
       throw new NotFoundException('Reserva no encontrada');
@@ -72,9 +83,13 @@ export class ReservationsService {
     return this.toSafeReservation(reservation);
   }
 
-  async update(id: number, dto: UpdateReservationDto): Promise<Reservation> {
+  async update(
+    id: number,
+    dto: UpdateReservationDto,
+    currentUser: CurrentUserType,
+  ): Promise<ReservationEntity> {
     await this.dataSource.transaction(async (manager) => {
-      const reservationRepository = manager.getRepository(Reservation);
+      const reservationRepository = manager.getRepository(ReservationEntity);
       const reservation = await reservationRepository.findOne({
         where: { id },
         lock: { mode: 'pessimistic_write' },
@@ -85,36 +100,52 @@ export class ReservationsService {
       await this.ensureNotUsed(manager, id);
       const reservationWithRelations = await reservationRepository.findOne({
         where: { id },
-        relations: { user: true, parkingSpace: true, vehicle: true },
+        relations: { user: true, parkingSpace: true },
       });
-      if (!reservationWithRelations?.user || !reservationWithRelations.parkingSpace) {
-        throw new ConflictException('La reserva no tiene sus relaciones requeridas');
+      if (
+        !reservationWithRelations?.user ||
+        !reservationWithRelations.parkingSpace
+      ) {
+        throw new ConflictException(
+          'La reserva no tiene sus relaciones requeridas',
+        );
       }
 
-      const startTime = dto.startTime === undefined
-        ? reservationWithRelations.startTime
-        : this.parseDate(dto.startTime, 'startTime');
-      const endTime = dto.endTime === undefined
-        ? reservationWithRelations.endTime
-        : this.parseDate(dto.endTime, 'endTime');
+      const startTime =
+        dto.startTime === undefined
+          ? reservationWithRelations.startTime
+          : this.parseDate(dto.startTime, 'startTime');
+      const endTime =
+        dto.endTime === undefined
+          ? reservationWithRelations.endTime
+          : this.parseDate(dto.endTime, 'endTime');
       this.validatePeriod(startTime, endTime);
 
-      const parkingSpaceId = dto.parkingSpaceId ?? reservationWithRelations.parkingSpace.id;
+      const parkingSpaceId =
+        dto.parkingSpaceId ?? reservationWithRelations.parkingSpace.id;
       const parkingSpace = await this.lockParkingSpace(manager, parkingSpaceId);
-      const userId = dto.userId ?? reservationWithRelations.user.id;
+      const userId = currentUser.id ?? reservationWithRelations.user.id;
       const user = await this.findUser(manager, userId);
-      const vehicleId = dto.vehicleId === undefined
-        ? reservationWithRelations.vehicle?.id ?? null
-        : dto.vehicleId;
-      const vehicle = vehicleId == null ? null : await this.findVehicle(manager, vehicleId);
+      const vehicleId =
+        dto.vehiclePlateNumber === undefined
+          ? (reservationWithRelations.vehiclePlateNumber ?? null)
+          : dto.vehiclePlateNumber;
+      const vehicle =
+        vehicleId == null ? null : await this.findVehicle(manager, vehicleId);
       this.validateVehicleCompatibility(vehicle, parkingSpace);
-      await this.ensureNoOverlap(manager, parkingSpace.id, startTime, endTime, id);
+      await this.ensureNoOverlap(
+        manager,
+        parkingSpace.id,
+        startTime,
+        endTime,
+        id,
+      );
 
       reservation.startTime = startTime;
       reservation.endTime = endTime;
       reservation.parkingSpace = parkingSpace;
       reservation.user = user;
-      reservation.vehicle = vehicle;
+      reservation.vehiclePlateNumber = vehicle.plateNumber;
       await reservationRepository.save(reservation);
     });
     return this.findOne(id);
@@ -122,7 +153,7 @@ export class ReservationsService {
 
   async remove(id: number): Promise<void> {
     await this.dataSource.transaction(async (manager) => {
-      const reservationRepository = manager.getRepository(Reservation);
+      const reservationRepository = manager.getRepository(ReservationEntity);
       const reservation = await reservationRepository.findOne({
         where: { id },
         lock: { mode: 'pessimistic_write' },
@@ -135,7 +166,10 @@ export class ReservationsService {
     });
   }
 
-  private async lockParkingSpace(manager: EntityManager, id: number): Promise<ParkingSpace> {
+  private async lockParkingSpace(
+    manager: EntityManager,
+    id: number,
+  ): Promise<ParkingSpace> {
     const parkingSpace = await manager.getRepository(ParkingSpace).findOne({
       where: { id },
       lock: { mode: 'pessimistic_write' },
@@ -146,7 +180,10 @@ export class ReservationsService {
     return parkingSpace;
   }
 
-  private async findUser(manager: EntityManager, id: number): Promise<UserEntity> {
+  private async findUser(
+    manager: EntityManager,
+    id: number,
+  ): Promise<UserEntity> {
     const user = await manager.getRepository(UserEntity).findOneBy({ id });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -154,8 +191,13 @@ export class ReservationsService {
     return user;
   }
 
-  private async findVehicle(manager: EntityManager, id: number): Promise<Vehicle> {
-    const vehicle = await manager.getRepository(Vehicle).findOneBy({ id });
+  private async findVehicle(
+    manager: EntityManager,
+    plateNumber: string,
+  ): Promise<VehicleEntity> {
+    const vehicle = await manager
+      .getRepository(VehicleEntity)
+      .findOneBy({ plateNumber });
     if (!vehicle) {
       throw new NotFoundException('Vehículo no encontrado');
     }
@@ -163,17 +205,21 @@ export class ReservationsService {
   }
 
   private validateVehicleCompatibility(
-    vehicle: Vehicle | null,
+    vehicle: VehicleEntity | null,
     parkingSpace: ParkingSpace,
   ): void {
     if (vehicle && String(vehicle.type) !== String(parkingSpace.type)) {
-      throw new ConflictException('El espacio no es compatible con el vehículo');
+      throw new ConflictException(
+        'El espacio no es compatible con el vehículo',
+      );
     }
   }
 
   private validatePeriod(startTime: Date, endTime: Date): void {
     if (endTime <= startTime) {
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio');
+      throw new BadRequestException(
+        'La fecha de fin debe ser posterior a la fecha de inicio',
+      );
     }
   }
 
@@ -193,7 +239,7 @@ export class ReservationsService {
     excludedId?: number,
   ): Promise<void> {
     const query = manager
-      .getRepository(Reservation)
+      .getRepository(ReservationEntity)
       .createQueryBuilder('reservation')
       .innerJoin('reservation.parkingSpace', 'parkingSpace')
       .where('parkingSpace.id = :parkingSpaceId', { parkingSpaceId })
@@ -204,20 +250,27 @@ export class ReservationsService {
       query.andWhere('reservation.id != :excludedId', { excludedId });
     }
     if (await query.getOne()) {
-      throw new ConflictException('El espacio ya tiene una reserva en ese horario');
+      throw new ConflictException(
+        'El espacio ya tiene una reserva en ese horario',
+      );
     }
   }
 
-  private async ensureNotUsed(manager: EntityManager, id: number): Promise<void> {
-    const ticket = await manager.getRepository(Ticket).findOne({
+  private async ensureNotUsed(
+    manager: EntityManager,
+    id: number,
+  ): Promise<void> {
+    const ticket = await manager.getRepository(TicketEntity).findOne({
       where: { reservation: { id } },
     });
     if (ticket) {
-      throw new ConflictException('No se puede modificar una reserva asociada a un ticket');
+      throw new ConflictException(
+        'No se puede modificar una reserva asociada a un ticket',
+      );
     }
   }
 
-  private toSafeReservation(reservation: Reservation): Reservation {
+  private toSafeReservation(reservation: ReservationEntity): ReservationEntity {
     if (reservation.user) {
       const { password: _password, ...publicUser } = reservation.user;
       reservation.user = publicUser as UserEntity;
