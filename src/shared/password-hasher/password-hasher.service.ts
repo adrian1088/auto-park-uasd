@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import  bcrypt from 'bcrypt';
-import { IEcryptService } from './encrypt.interfaces';
+import { IEcryptService } from './password-hasher.interfaces';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class EncryptService implements IEcryptService {
+export class PasswordHasherService implements IEcryptService {
   private rounds: number;
 
   constructor(private readonly configService: ConfigService) {

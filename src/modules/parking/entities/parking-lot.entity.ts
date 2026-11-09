@@ -1,6 +1,6 @@
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { Column, Entity, OneToMany } from 'typeorm';
-import { Rate } from '../../rates/entities/rate.entity';
+import { RateEntity } from '../../rates/entities/rate.entity';
 import { ParkingFloor } from './parking-floor.entity';
 
 @Entity({ name: 'parking_lots', comment: 'Parking lots table' })
@@ -17,6 +17,6 @@ export class ParkingLot extends AuditEntity {
   @OneToMany(() => ParkingFloor, (floor) => floor.lot)
   floors: ParkingFloor[];
 
-  @OneToMany(() => Rate, (rate) => rate.parkingLot)
-  rates: Rate[];
+  @OneToMany(() => RateEntity, (rate) => rate.parkingLot)
+  rates: RateEntity[];
 }

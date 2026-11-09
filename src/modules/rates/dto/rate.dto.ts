@@ -1,5 +1,5 @@
 import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from "@nestjs/swagger";
-import { Rate } from "../entities/rate.entity";
+import { RateEntity } from "../entities/rate.entity";
 import { RateType } from "../enum/rate-type.enum";
 import { Type } from "class-transformer";
 import { PaginationDto } from "../../../shared/dtos/pagination.dto";
@@ -28,7 +28,7 @@ export class RateDto {
   @ApiResponseProperty({ type: Object, example: { id: 1, name: "Main Parking Lot" } })
   parkingLot: { id: number; name: string };
 
-  static fromEntity(entity: Rate): RateDto {
+  static fromEntity(entity: RateEntity): RateDto {
     const dto = new RateDto();
     dto.id = entity.id;
     dto.amount = entity.amount;
@@ -40,7 +40,7 @@ export class RateDto {
     return dto;
   }
 
-  static fromEntities(entities: Rate[]): RateDto[] {
+  static fromEntities(entities: RateEntity[]): RateDto[] {
     return entities.map(entity => RateDto.fromEntity(entity));
   }
 }

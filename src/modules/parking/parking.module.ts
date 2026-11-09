@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ParkingLot } from './entities/parking-lot.entity';
 import { ParkingFloor } from './entities/parking-floor.entity';
 import { ParkingSpace } from './entities/parking-space.entity';
-import { Ticket } from '../tickets/entities/ticket.entity';
+import { TicketEntity } from '../tickets/entities/ticket.entity';
 import { LotsController } from './lots/lots.controller';
 import { LotsService } from './lots/lots.service';
 import { FloorsController } from './floors/floors.controller';
@@ -13,7 +13,7 @@ import { SpacesService } from './spaces/spaces.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ParkingLot, ParkingFloor, ParkingSpace, Ticket]),
+    TypeOrmModule.forFeature([ParkingLot, ParkingFloor, ParkingSpace, TicketEntity]),
   ],
   controllers: [LotsController, FloorsController, SpacesController],
   providers: [LotsService, FloorsService, SpacesService],

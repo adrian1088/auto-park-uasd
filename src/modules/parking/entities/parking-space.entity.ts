@@ -3,8 +3,8 @@ import { AuditEntity } from '../../../shared/base/audit.entity';
 import { ParkingFloor } from './parking-floor.entity';
 import { ParkingSpaceStatus } from '../enum/parking-space-status.enum';
 import { ParkingSpaceType } from '../enum/parking-space-type.enum';
-import { Reservation } from '../../reservations/entities/reservation.entity';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { ReservationEntity } from '../../reservations/entities/reservation.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 
 @Entity({ name: 'parking_spaces', comment: 'Parking spaces table' })
 @Unique(['spaceNumber', 'floor'])
@@ -31,9 +31,9 @@ export class ParkingSpace extends AuditEntity {
   @ManyToOne(() => ParkingFloor, (floor) => floor.spaces)
   floor: ParkingFloor;
 
-  @OneToMany(() => Reservation, (reservation) => reservation.parkingSpace)
-  reservations: Reservation[];
+  @OneToMany(() => ReservationEntity, (reservation) => reservation.parkingSpace)
+  reservations: ReservationEntity[];
 
-  @OneToMany(() => Ticket, (ticket) => ticket.spot)
-  tickets: Ticket[];
+  @OneToMany(() => TicketEntity, (ticket) => ticket.spot)
+  tickets: TicketEntity[];
 }

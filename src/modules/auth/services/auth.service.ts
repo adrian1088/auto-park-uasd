@@ -1,23 +1,21 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { User } from '../users/entities/users.entity';
-import { IsNull, Repository } from 'typeorm';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserStatus } from '../../users/enums/users-status.enum';
+import { UserEntity } from '../../users/entities/users.entity';
+import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EncryptService } from '../../shared/encrypt/encrypt.service';
+import { PasswordHasherService } from '../../../shared/password-hasher/password-hasher.service';
 import {
   JwtAccessPayload,
   JwtRefreshPayload,
-} from './interfaces/jwt-payload.interface';
+} from '../interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import ms from 'ms';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
-import { UserRole } from '../users/enums/users-role.enum';
-import { UserStatus } from '../users/enums/users-status.enum';
-import { SignUpDto } from './dto/sign-up.dto';
+import { UsersService } from '../../users/users.service';
+import { RegisterDto } from '../dto/register.dto';
+import { TokensService } from '../../tokens/services/tokens.service';
+import { AppConfigType } from '../../../config/app-config.type';
+import { MailService } from '../../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -27,12 +25,14 @@ export class AuthService {
   private readonly accessExpiresIn: string;
 
   constructor(
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>,
+    @InjectRepository(UserEntity)
+    private readonly userRepo: Repository<UserEntity>,
     private readonly userService: UsersService,
-    private readonly encryptService: EncryptService,
+    private readonly passwordHasherService: PasswordHasherService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly tokensService: TokensService,
+    private readonly mailService: MailService,
   ) {
     this.accessSecret = this.configService.getOrThrow('jwt.secret');
     this.accessExpiresIn = this.configService.getOrThrow('jwt.expiresIn');
@@ -42,33 +42,37 @@ export class AuthService {
     );
   }
 
-  async signIn(user: User) {
+  async login(user: UserEntity) {
     const accessToken = await this.signAccessToken(user.id);
     const refreshToken = await this.signRefreshToken(user.id);
-    //TODO: Eliminar mas adelante
-    // const hashedRefresh = await this.encryptService.hash(refreshToken);
-    // const expiresAt = new Date(
-    //   Date.now() + ms(this.refreshExpiresIn as ms.StringValue),
-    // );
-
     return { accessToken, refreshToken };
   }
 
-  async signUp(user: SignUpDto) {
-    const newUser = await this.userService.create({
-      role: UserRole.USER,
-      status: UserStatus.ACTIVE,
+  async register(user: RegisterDto) {
+    const config = this.configService.getOrThrow<AppConfigType>('app');
+    await this.userService.ensureEmailAvailable(user.email);
+    user.password = await this.passwordHasherService.hash(user.password);
+
+    const userCreated = this.userRepo.create({
       ...user,
+      status: UserStatus.PENDING_ACTIVATION,
     });
-    return newUser;
+    const savedUser = await this.userRepo.save(userCreated);
+    const tokens = await this.tokensService.create({
+      userId: savedUser.id,
+      ttlHours: config.defaultTokenActivationTtlHours,
+    });
+
+    if (savedUser && tokens) {
+      await this.mailService.sendTokenActivationEmail({
+        to: savedUser.email,
+        data: { hash: tokens.token, url: 'activate-email' },
+      });
+    }
+    return savedUser;
   }
 
-   signOut(userId: number) {
-    // TODO: Borrar mas adelante
-    // const user = await this.userRepo.findOne({ where: { id: userId } });
-    // if (!user) throw new UnauthorizedException('Usuario no autorizado');
-    // return { success: true };
-  }
+  logout(userId: number) {}
 
   async refreshTokens(
     refreshToken: string,
@@ -83,7 +87,7 @@ export class AuthService {
       });
 
       const { accessToken, refreshToken: newRefresh } = user
-        ? await this.signIn(user)
+        ? await this.login(user)
         : { accessToken: '', refreshToken: '' };
 
       return { accessToken, refreshToken: newRefresh };
@@ -92,14 +96,17 @@ export class AuthService {
     }
   }
 
-  async findUserAuthById(id: number): Promise<User | null> {
+  async findUserAuthById(id: number): Promise<UserEntity | null> {
     const user = await this.userRepo.findOne({
       where: { id: id },
     });
     return user;
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<UserEntity | null> {
     const user = await this.userRepo
       .createQueryBuilder('user')
       .addSelect('user.password')
@@ -108,10 +115,17 @@ export class AuthService {
       })
       .getOne();
 
-    if (!user) throw new UnauthorizedException('Credenciales inválidas');
-
-    const matches = await this.encryptService.compare(password, user.password);
+    if (!user) throw new UnauthorizedException('Credenciales inválidas ');
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Usuario no activo');
+    }
+    
+    const matches = await this.passwordHasherService.compare(
+      password,
+      user.password,
+    );
     if (!matches) throw new UnauthorizedException('Credenciales inválidas');
+    await this.userRepo.update({ id: user.id }, { lastLoginAt: new Date() });
     return user;
   }
 

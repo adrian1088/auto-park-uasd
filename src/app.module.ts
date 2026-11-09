@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { UsersModule } from './modules/users/users.module';
 import { SharedModule } from './shared/shared.module';
 import appConfig from './config/app.config';
@@ -18,6 +16,11 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
 import { RatesModule } from './modules/rates/rates.module';
 import { HealthModule } from './health/health.module';
 import corsConfig from './config/cors.config';
+// import { IdentityModule } from './modules/identity/identity.module';
+import mailConfig from './config/mail.config';
+import { MailModule } from './modules/mail/mail.module';
+import { MailerModule } from './modules/mailer/mailer.module';
+import { TokensModule } from './modules/tokens/tokens.module';
 
 @Module({
   imports: [
@@ -29,6 +32,7 @@ import corsConfig from './config/cors.config';
         jwtConfig,
         encryptConfig,
         corsConfig,
+        mailConfig,
         // authConfig,
         // mailConfig,
         // fileConfig,
@@ -46,8 +50,12 @@ import corsConfig from './config/cors.config';
     ParkingModule,
     ReservationsModule,
     RatesModule,
+    // IdentityModule,
+    MailerModule,
+    MailModule,
+    TokensModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

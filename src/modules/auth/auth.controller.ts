@@ -2,15 +2,17 @@ import {
   Controller,
   Post,
   Body,
-  UnauthorizedException,
   Get,
   Res,
   UseGuards,
   Req,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
+import { PasswordResetService } from './services/password-reset.service';
 import { ConfigService } from '@nestjs/config';
-import { SignInDto } from './dto/sign-in.dto';
-import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { AuthService } from './services/auth.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../../shared/decorator/public.decorator';
 import ms from 'ms';
@@ -21,9 +23,13 @@ import {
 } from '../../shared/decorator/current-user.decorator';
 import JwtRefreshGuard from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { SignUpDto } from './dto/sign-up.dto';
+import { RegisterDto } from './dto/register.dto';
 import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
 import { CurrentUserDto } from './dto/current-user.dto';
+import { ActivateAccountDto } from './dto/activate-account.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ActivationService } from './services/activation.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -37,6 +43,8 @@ export class AuthController {
 
   constructor(
     private readonly authService: AuthService,
+    private readonly activationService: ActivationService,
+    private readonly passwordResetService: PasswordResetService,
     private readonly configService: ConfigService,
   ) {
     this.accessSecret = this.configService.getOrThrow<string>('jwt.secret');
@@ -55,35 +63,37 @@ export class AuthController {
   }
 
   @Public()
-  @Post('sign-in')
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Sign in with email or email and password',
     description:
       'Login with email or email and password, return access token and refresh token in cookie',
   })
-  async signIn(
-    @Body() dto: SignInDto,
+  async login(
+    @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
   ) {
     const user = await this.authService.validateUser(dto.email, dto.password);
-    const { accessToken, refreshToken } = await this.authService.signIn(user);
+    const { accessToken, refreshToken } = await this.authService.login(user);
     this.setAuthCookies(res, accessToken, refreshToken);
     return { message: 'Signed in successfully' };
   }
 
   @Public()
-  @Post('sign-up')
+  @Post('register')
   @ApiOperation({
     summary: 'Sign up a new user',
     description: 'Create a new user account and return the created user',
   })
-  async signUp(@Body() dto: SignUpDto) {
-    const user = await this.authService.signUp(dto);
+  async register(@Body() dto: RegisterDto) {
+    const user = await this.authService.register(dto);
     return user;
   }
 
   @Public()
   @Post('refresh')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh access token using refresh token',
     description:
@@ -113,21 +123,51 @@ export class AuthController {
   }
 
   @Public()
-  @Post('sign-out')
-  // @UseGuards(JwtRefreshGuard) // TODO: Eliminar
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Logout user',
     description:
       'Logout user by clearing auth cookies and invalidating refresh token',
   })
-  async signOut(
+  async logout(
     @CurrentUser() user: CurrentUserType,
     @Res({ passthrough: true }) res: Response,
   ) {
     const userId = user?.id;
-    const result = await this.authService.signOut(userId);
+    const result = await this.authService.logout(userId);
     this.clearAuthCookies(res);
     return { message: 'Signed out successfully' };
+  }
+
+  @Public()
+  @Post('activate')
+  @ApiOperation({
+    summary: 'Activate user account',
+    description: 'Activate user account using the activation token',
+  })
+  async activate(@Body() dto: ActivateAccountDto) {
+    return await this.activationService.activate(dto.token, dto.password);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @ApiOperation({
+    summary: 'Request password reset',
+    description: 'Send a password reset email to the user',
+  })
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return await this.passwordResetService.request(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @ApiOperation({
+    summary: 'Reset password',
+    description: 'Reset user password using the reset token',
+  })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.passwordResetService.reset(dto);
   }
 
   private isProd() {

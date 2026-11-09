@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { CreateRateDto } from './dto/create-rate.dto';
 import { UpdateRateDto } from './dto/update-rate.dto';
-import { Rate } from './entities/rate.entity';
+import { RateEntity } from './entities/rate.entity';
 import { RateType } from './enum/rate-type.enum';
 import { RatesService } from './rates.service';
 import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';

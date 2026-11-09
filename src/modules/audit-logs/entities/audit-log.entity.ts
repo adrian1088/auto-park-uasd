@@ -5,7 +5,7 @@ import {
   RelationId,
 } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { User } from '../../users/entities/users.entity';
+import { UserEntity } from '../../users/entities/users.entity';
 
 @Entity({ name: 'audit_logs', comment: 'Audit Log Entity' })
 export class AuditLog extends AuditEntity {
@@ -51,8 +51,8 @@ export class AuditLog extends AuditEntity {
   })
   errorMessage: string | null;
 
-  @ManyToOne(() => User, (user) => user.auditLogs)
-  user: User | null;
+  @ManyToOne(() => UserEntity, (user) => user.auditLogs)
+  user: UserEntity | null;
 
   @RelationId((auditLog: AuditLog) => auditLog.user)
   userId: number | null;

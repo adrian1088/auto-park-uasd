@@ -1,3 +1,9 @@
 import { PaginationDto } from '../../../shared/dtos/pagination.dto';
+import { IntersectionType } from '@nestjs/swagger';
 
-export class FindUsersDto extends PaginationDto {}
+export class FilterUserDto {}
+
+export class FilterUserPaginatedDto extends IntersectionType(
+  FilterUserDto,
+  PaginationDto,
+) {}

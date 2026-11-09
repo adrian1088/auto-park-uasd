@@ -6,14 +6,16 @@ import { ResponseInterceptor } from './interceptors/response.interceptor';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { AuditInterceptor } from './interceptors/audit.interceptor';
 import { AuditLogsModule } from '../modules/audit-logs/audit.module';
-import { EncryptModule } from './encrypt/encrypt.module';
+import { PasswordHasherModule } from './password-hasher/password-hasher.module';
+import { CryptoHasherService } from './crypto-hasher/crypto-hasher.service';
 
 @Global()
 @Module({
-  imports: [AuditLogsModule, EncryptModule],
+  imports: [AuditLogsModule, PasswordHasherModule],
   providers: [
     BaseEntity,
     Logger,
+    CryptoHasherService,
     // Global interceptors
     { provide: APP_INTERCEPTOR, useClass: AuditInterceptor },
     {
@@ -29,6 +31,6 @@ import { EncryptModule } from './encrypt/encrypt.module';
       useClass: HttpExceptionFilter,
     },
   ],
-  exports: [BaseEntity],
+  exports: [BaseEntity, CryptoHasherService],
 })
 export class SharedModule {}
