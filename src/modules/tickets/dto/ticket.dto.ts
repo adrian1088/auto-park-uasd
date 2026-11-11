@@ -1,6 +1,6 @@
 import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../shared/dtos/pagination.dto';
-import { Ticket } from '../entities/ticket.entity';
+import { TicketEntity } from '../entities/ticket.entity';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { IsOptional, IsString } from 'class-validator';
 
@@ -17,6 +17,30 @@ export class TicketDto {
   })
   code: string;
 
+  @ApiResponseProperty({
+    type: 'string',
+    example: '2024-06-01T12:00:00Z',
+  })
+  entranceAt: Date;
+
+    @ApiResponseProperty({
+    type: 'string',
+    example: '2024-06-01T14:00:00Z',
+  })
+  exitAt: Date | null;
+
+   @ApiResponseProperty({
+    enum: TicketStatus,
+    example: TicketStatus.ACTIVE,
+  })
+  status: TicketStatus;
+
+   @ApiResponseProperty({
+    type: 'number',
+    example: 50.00,
+  })
+  rateAmount: number;
+
 @ApiResponseProperty({
     type: 'string', 
     example: 'A-892-XYZ' })
@@ -26,77 +50,17 @@ export class TicketDto {
     type: 'string', 
     example: 'A-12' })
    spotNumber?: string; 
-   
-  @ApiResponseProperty({
-    type: 'string',
-    example: '2024-06-01T12:00:00Z',
-  })
-  entranceAt: Date;
-  @ApiResponseProperty({
-    type: 'string',
-    example: '2024-06-01T14:00:00Z',
-  })
-  exitAt: Date | null;
-
-  @ApiResponseProperty({
-    enum: TicketStatus,
-    example: TicketStatus.ACTIVE,
-  })
-  status: TicketStatus;
-
-  @ApiResponseProperty({
-    type: 'number',
-    example: 50.00,
-  })
-  rateAmount: number;
-
-  // TODO: validar mas adelante
-  // @ApiResponseProperty({
-  //   type: 'number',
-  //   example: 1,
-  // })
-  // vehicleId: number;
-
-  // @ApiResponseProperty({
-  //   type: 'number',
-  //   example: 1,
-  // })
-  // userId: number;
-
-  // @ApiResponseProperty({
-  //   type: 'number',
-  //   example: 1,
-  // })
-  // spotId: number;
-
-  // @ApiResponseProperty({
-  //   type: 'number',
-  //   example: 1,
-  // })
-  // reservationId: number | null;
-
-  // @ApiResponseProperty({
-  //   type: 'number',
-  //   example: 1,
-  // })
-  // rateId: number;
-
 
   static fromEntity(ticket: Ticket): TicketDto {
     const dto = new TicketDto();
     dto.id = ticket.id;
     dto.code = ticket.code;
-    dto.plateNumber = ticket.vehicle?.plateNumber; 
-    dto.spotNumber = ticket.spot?.spaceNumber;
-    dto.entranceAt = ticket.entranceAt;
+    dto.entranceAt = ticket.entranceAt; 
     dto.exitAt = ticket.exitAt;
     dto.status = ticket.status;
     dto.rateAmount = Number(ticket.rateAmount);
-    // dto.vehicleId = ticket.vehicle?.id;
-    // dto.userId = ticket.user?.id;
-    // dto.spotId = ticket.spot?.id;
-    // dto.reservationId = ticket.reservation?.id ?? null;
-    // dto.rateId = ticket.rate?.id;
+    dto.plateNumber = ticket.vehicle?.plateNumber; 
+    dto.spotNumber = ticket.spot?.spaceNumber;
     return dto;
   }
 

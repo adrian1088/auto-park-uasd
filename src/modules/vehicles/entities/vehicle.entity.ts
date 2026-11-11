@@ -1,12 +1,12 @@
 import { Column, ManyToOne, Entity, OneToMany } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { VehicleType } from '../enum/vihicle-type.enum';
-import { User } from '../../users/entities/users.entity';
-import { Ticket } from '../../tickets/entities/ticket.entity';
-import { Reservation } from '../../reservations/entities/reservation.entity';
+import { UserEntity } from '../../users/entities/users.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
+import { ReservationEntity } from '../../reservations/entities/reservation.entity';
 
-@Entity({ name: 'vehicles', comment: 'Vehicles table' })
-export class Vehicle extends AuditEntity {
+@Entity({ name: 'vehiclesEntity', comment: 'Vehicles table' })
+export class VehicleEntity extends AuditEntity {
     @Column({type: 'varchar', length: 20, comment: 'Plate number of the vehicle'})
     plateNumber: string;
 
@@ -29,12 +29,12 @@ export class Vehicle extends AuditEntity {
     @Column({type: 'varchar', length: 255, comment: 'Owner name of the vehicle'})
     ownerName: string;
 
-    @ManyToOne(() => User, (user) => user.vehicles)
-    user: User; // Muchos vehículos pueden pertenecer a un solo usuario
+    @ManyToOne(() => UserEntity, (user) => user.vehicles)
+    user: UserEntity; // Muchos vehículos pueden pertenecer a un solo usuario
 
-    @OneToMany(() => Ticket, (ticket) => ticket.vehicle)
-    tickets: Ticket[];
+    @OneToMany(() => TicketEntity, (ticket) => ticket.vehicle)
+    tickets: TicketEntity[];
 
-    @OneToMany(() => Reservation, (reservation) => reservation.vehicle)
-    reservations: Reservation[];
+    @OneToMany(() => ReservationEntity, (reservation) => reservation.vehicle)
+    reservations: ReservationEntity[];
 }

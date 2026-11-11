@@ -2,23 +2,23 @@ import { Module } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { TicketsController } from './tickets.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Ticket } from './entities/ticket.entity';
-import { Vehicle } from '../vehicles/entities/vehicle.entity';
-import { User } from '../users/entities/users.entity';
+import { TicketEntity } from './entities/ticket.entity';
+import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { ParkingSpace } from '../parking/entities/parking-space.entity';
-import { Reservation } from '../reservations/entities/reservation.entity';
-import { Rate } from '../rates/entities/rate.entity';
+import { ReservationEntity } from '../reservations/entities/reservation.entity';
+import { RateEntity } from '../rates/entities/rate.entity';
 import { Payment } from '../payments/entities/payment.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Ticket,
-      Vehicle,
-      User,
+      TicketEntity,
+      VehicleEntity,
+      UserEntity,
       ParkingSpace,
-      Reservation,
-      Rate,
+      ReservationEntity,
+      RateEntity,
       Payment,
     ]),
   ],

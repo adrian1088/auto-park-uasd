@@ -6,21 +6,21 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { Vehicle } from './entities/vehicle.entity';
+import { VehicleEntity } from './entities/vehicle.entity';
 
 @Injectable()
 export class VehiclesService {
   constructor(
-    @InjectRepository(Vehicle)
-    private readonly vehiclesRepository: Repository<Vehicle>,
-    @InjectRepository(User)
-    private readonly usersRepository: Repository<User>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehiclesRepository: Repository<VehicleEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
-  async create(createVehicleDto: CreateVehicleDto): Promise<Vehicle> {
+  async create(createVehicleDto: CreateVehicleDto): Promise<VehicleEntity> {
     await this.ensurePlateAvailable(createVehicleDto.plateNumber);
     const user = createVehicleDto.userId
       ? await this.findUser(createVehicleDto.userId)
@@ -37,7 +37,7 @@ export class VehiclesService {
     return this.toSafeVehicle(await this.vehiclesRepository.save(vehicle));
   }
 
-  async findAll(): Promise<Vehicle[]> {
+  async findAll(): Promise<VehicleEntity[]> {
     const vehicles = await this.vehiclesRepository.find({
       relations: { user: true },
       order: { id: 'DESC' },
@@ -45,7 +45,7 @@ export class VehiclesService {
     return vehicles.map((vehicle) => this.toSafeVehicle(vehicle));
   }
 
-  async findOne(id: number): Promise<Vehicle> {
+  async findOne(id: number): Promise<VehicleEntity> {
     const vehicle = await this.vehiclesRepository.findOne({
       where: { id },
       relations: { user: true },
@@ -56,7 +56,7 @@ export class VehiclesService {
     return this.toSafeVehicle(vehicle);
   }
 
-  async update(id: number, updateVehicleDto: UpdateVehicleDto): Promise<Vehicle> {
+  async update(id: number, updateVehicleDto: UpdateVehicleDto): Promise<VehicleEntity> {
     if (
       Object.entries(updateVehicleDto).some(
         ([field, value]) => value === null && field !== 'userId',
@@ -95,7 +95,7 @@ export class VehiclesService {
     await this.vehiclesRepository.remove(vehicle);
   }
 
-  private async findEntity(id: number): Promise<Vehicle> {
+  private async findEntity(id: number): Promise<VehicleEntity> {
     const vehicle = await this.vehiclesRepository.findOneBy({ id });
     if (!vehicle) {
       throw new NotFoundException('Vehículo no encontrado');
@@ -103,7 +103,7 @@ export class VehiclesService {
     return vehicle;
   }
 
-  private async findUser(id: number): Promise<User> {
+  private async findUser(id: number): Promise<UserEntity> {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
@@ -123,10 +123,10 @@ export class VehiclesService {
     }
   }
 
-  private toSafeVehicle(vehicle: Vehicle): Vehicle {
+  private toSafeVehicle(vehicle: VehicleEntity): VehicleEntity {
     if (vehicle.user) {
       const { password: _password, ...publicUser } = vehicle.user;
-      vehicle.user = publicUser as User;
+      vehicle.user = publicUser as UserEntity;
     }
     return vehicle;
   }

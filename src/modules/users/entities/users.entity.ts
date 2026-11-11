@@ -2,14 +2,14 @@ import { Entity, Column, OneToMany } from 'typeorm';
 import { UserStatus } from '../enums/users-status.enum';
 import { UserRole } from '../enums/users-role.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { Vehicle } from '../../vehicles/entities/vehicle.entity';
+import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
 import { Reservation } from '../../reservations/entities/reservation.entity';
-import { Ticket } from '../../tickets/entities/ticket.entity';
+import { TicketEntity } from '../../tickets/entities/ticket.entity';
 import { Payment } from '../../payments/entities/payment.entity';
 import { AuditLog } from '../../audit-logs/entities/audit-log.entity';
 
 @Entity({ name: 'users', comment: 'Users table storing user information' })
-export class User extends AuditEntity {
+export class UserEntity extends AuditEntity {
   @Column({ type: 'varchar', length: 255, comment: 'User name' })
   name: string;
 
@@ -43,14 +43,14 @@ export class User extends AuditEntity {
   @Column({ type: 'varchar', length: 255, comment: 'Phone number' })
   phone: string;
 
-  @OneToMany(() => Vehicle, (vehicle) => vehicle.user)
-  vehicles: Vehicle[];
+  @OneToMany(() => VehicleEntity, (vehicle) => vehicle.user)
+  vehicles: VehicleEntity[];
 
-  @OneToMany(() => Reservation, (reservation) => reservation.user)
-  reservations: Reservation[];
+  @OneToMany(() => ReservationEntity, (reservation) => reservation.user)
+  reservations: ReservationEntity[];
 
-  @OneToMany(() => Ticket, (ticket) => ticket.user)
-  tickets: Ticket[];
+  @OneToMany(() => TicketEntity, (ticket) => ticket.user)
+  tickets: TicketEntity[];
 
   @OneToMany(() => Payment, (payment) => payment.user)
   payments: Payment[];

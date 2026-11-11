@@ -13,11 +13,16 @@ import {
   FilterTicketPaginatedDto,
   TicketDto,
 } from './dto/ticket.dto';
+import { CheckoutQuoteDto } from './dto/checkout-quote.dto';
 import { TicketsService } from './tickets.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
 import { ApiResponseType } from '../../shared/decorator/api-response-type.decorator';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
+import {
+  CurrentUser,
+  CurrentUserType,
+} from '../../shared/decorator/current-user.decorator';
 
 @ApiTags('Tickets')
 @Controller('tickets')
@@ -25,18 +30,32 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Post('check-in')
-  checkIn(@Body() dto: CheckInDto) {
-    return this.ticketsService.checkIn(dto);
+  @ApiResponseType(TicketDto)
+  async checkIn(
+    @Body() dto: CheckInDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<TicketDto> {
+    const result = await this.ticketsService.checkIn(dto, user);
+    return TicketDto.fromEntity(result);
   }
 
   @Get(':id/checkout-quote')
-  checkoutQuote(@Param('id', ParseIntPipe) id: number) {
-    return this.ticketsService.checkoutQuote(id);
+  @ApiResponseType(CheckoutQuoteDto)
+  async checkoutQuote(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<CheckoutQuoteDto> {
+    const result = await this.ticketsService.checkoutQuote(id);
+    return result;
   }
 
   @Post(':id/check-out')
-  checkOut(@Param('id', ParseIntPipe) id: number, @Body() dto: CheckOutDto) {
-    return this.ticketsService.checkOut(id, dto);
+  @ApiResponseType(TicketDto)
+  async checkOut(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CheckOutDto,
+  ): Promise<TicketDto> {
+    const result = await this.ticketsService.checkOut(id, dto);
+    return TicketDto.fromEntity(result);
   }
 
   @Get()
@@ -53,7 +72,9 @@ export class TicketsController {
   @ApiResponseType(TicketDto, {
     type: 'paginated',
   })
-  async findPaginated(@Query() filter: FilterTicketPaginatedDto) {
+  async findPaginated(
+    @Query() filter: FilterTicketPaginatedDto,
+  ): Promise<ResponsePaginatedDto<TicketDto>> {
     const { page, limit } = filter;
     const { data, total } = await this.ticketsService.findPaginated(filter);
     return ResponsePaginatedDto.fromDataAndMeta({
