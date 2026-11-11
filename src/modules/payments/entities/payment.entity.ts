@@ -32,7 +32,7 @@ export class Payment extends AuditEntity {
   })
   transactionReference: string | null;
 
-  @ManyToOne(() => User, (user) => user.payments)
+  @ManyToOne(() => User, (user) => user.payments, { nullable: true })
   user: User | null;
 
   @OneToOne(() => Ticket, (ticket) => ticket.payment, {
@@ -40,5 +40,5 @@ export class Payment extends AuditEntity {
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'ticket_id' })
-  ticket: Ticket;
+  ticket: Ticket | null; 
 }

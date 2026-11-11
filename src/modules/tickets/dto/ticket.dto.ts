@@ -17,6 +17,16 @@ export class TicketDto {
   })
   code: string;
 
+@ApiResponseProperty({
+    type: 'string', 
+    example: 'A-892-XYZ' })
+    plateNumber?: string; 
+
+  @ApiResponseProperty({ 
+    type: 'string', 
+    example: 'A-12' })
+   spotNumber?: string; 
+   
   @ApiResponseProperty({
     type: 'string',
     example: '2024-06-01T12:00:00Z',
@@ -76,6 +86,8 @@ export class TicketDto {
     const dto = new TicketDto();
     dto.id = ticket.id;
     dto.code = ticket.code;
+    dto.plateNumber = ticket.vehicle?.plateNumber; 
+    dto.spotNumber = ticket.spot?.spaceNumber;
     dto.entranceAt = ticket.entranceAt;
     dto.exitAt = ticket.exitAt;
     dto.status = ticket.status;

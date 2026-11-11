@@ -27,7 +27,8 @@ export class AuditInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const req = context.switchToHttp().getRequest();
     const method: string = req.method.toUpperCase();
-    const path: string = req.route?.path || req.path || req.url?.split('?')[0] || '';
+    const path: string =
+      req.route?.path || req.path || req.url?.split('?')[0] || '';
     const mutatingMethods = ['POST', 'PATCH', 'PUT', 'DELETE'];
     const resource = this.extractResource(path);
 
@@ -91,10 +92,31 @@ export class AuditInterceptor implements NestInterceptor {
     return value == null ? null : String(value);
   }
 
+  //Capturar mas data en los bugs
+  //---------------------------------------
   private toSafeErrorMessage(error: any): string {
-    return typeof error?.getStatus === 'function'
-      ? `Request failed with status ${error.getStatus()}`
-      : 'Request failed';
+    if (!error) {
+      return 'Unknown error';
+    }
+
+    // Si es una HttpException de NestJS, podemos extraer su respuesta o mensaje real
+    if (typeof error.getResponse === 'function') {
+      const response = error.getResponse();
+      if (typeof response === 'string') {
+        return response;
+      }
+      if (
+        typeof response === 'object' &&
+        response !== null &&
+        'message' in response
+      ) {
+        const msg = (response as any).message;
+        return Array.isArray(msg) ? msg.join(', ') : String(msg);
+      }
+    }
+
+    // Si es un error estándar de JavaScript/TypeScript, devolvemos su mensaje descriptivo
+    return error.message || 'Request failed';
   }
 
   private save(data: Partial<AuditLog>): void {

@@ -17,6 +17,7 @@ import { ParkingModule } from './modules/parking/parking.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { RatesModule } from './modules/rates/rates.module';
 import { HealthModule } from './health/health.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import corsConfig from './config/cors.config';
 
 @Module({
@@ -46,6 +47,7 @@ import corsConfig from './config/cors.config';
     ParkingModule,
     ReservationsModule,
     RatesModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -15,6 +15,7 @@ import { CreateParkingSpaceDto } from '../dto/create-parking-space.dto';
 import { UpdateParkingSpaceDto } from '../dto/update-parking-space.dto';
 import { SpacesService } from './spaces.service';
 import { ApiResponseType } from '../../../shared/decorator/api-response-type.decorator';
+import { ParkingSpaceStatus } from '../enum/parking-space-status.enum'; 
 import {
   FindParkingSpacesDto,
   FindParkingSpacesPaginatedDto,
@@ -86,5 +87,13 @@ export class SpacesController {
   async removeSpace(@Param('id', ParseIntPipe) id: number) {
     const space = await this.spacesService.removeSpace(id);
     return ParkingSpaceDto.fromEntity(space);
+  }
+
+  //Este metodo es para obtener los espacios que están en estado "Reservado" y que pueden ser reservados por los usuarios. 
+  @Get('reservable')
+  @ApiResponseType(ParkingSpaceDto, { type: 'array' })
+  async findReservableSpaces() {
+    const spaces = await this.spacesService.findSpacesByStatus(ParkingSpaceStatus.RESERVED);
+    return ParkingSpaceDto.fromEntities(spaces);
   }
 }

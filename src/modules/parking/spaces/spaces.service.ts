@@ -125,14 +125,15 @@ export class SpacesService {
         'No se puede modificar un espacio con un ticket activo',
       );
     }
-    if (
+if (
       dto.status !== undefined &&
       dto.status !== space.status &&
       dto.status !== ParkingSpaceStatus.FREE &&
-      dto.status !== ParkingSpaceStatus.OUT_OF_SERVICE
+      dto.status !== ParkingSpaceStatus.OUT_OF_SERVICE &&
+      dto.status !== ParkingSpaceStatus.RESERVED
     ) {
       throw new ConflictException(
-        'Los estados OCCUPIED y RESERVED solo pueden asignarse mediante los flujos operativos',
+        'Los estados OCCUPIED solo pueden asignarse mediante los flujos operativos',
       );
     }
     if (floor.lot.id !== space.floor.lot.id) {
@@ -161,7 +162,14 @@ export class SpacesService {
     space.status = ParkingSpaceStatus.OUT_OF_SERVICE;
     return this.spacesRepository.save(space);
   }
-
+  // Este método es para obtener los espacios que están en estado "Reservado" y que pueden ser reservados por los usuarios.
+async findSpacesByStatus(status: ParkingSpaceStatus): Promise<ParkingSpace[]> {
+    return this.spacesRepository.find({
+      where: { status },
+      relations: { floor: { lot: true } },
+      order: { spaceNumber: 'ASC' },
+    });
+  }
   private async ensureSpaceNumberAvailable(
     spaceNumber: string,
     floorId: number,

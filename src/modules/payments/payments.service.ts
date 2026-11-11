@@ -24,20 +24,39 @@ export class PaymentsService {
     private readonly ticketsService: TicketsService,
   ) {}
 
-  async create(
-    dto: CreatePaymentDto,
+async create(
+    dto: CreatePaymentDto & { userId?: number },
     currentUser: CurrentUserType,
   ): Promise<Payment> {
-    const user = await this.findUser(currentUser.id);
-    const ticket = await this.ticketsService.findOne(dto.ticketId);
+    let user = null;
+    // Prioriza el userId del cliente de la suscripción
+    const targetUserId = dto.userId || currentUser?.id;
+    
+    if (targetUserId) {
+      try {
+        user = await this.findUser(targetUserId);
+      } catch {
+        user = null;
+      }
+    }
+    
+    // Si viene ticketId lo busca, de lo contrario es un pago de suscripción o manual (null)
+    const ticket = dto.ticketId
+      ? await this.ticketsService.findOne(dto.ticketId)
+      : null;
+
     const payment = this.paymentsRepository.create({
       amount: dto.amount,
-      // paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
+      paymentDate: dto.paymentDate ? new Date(dto.paymentDate) : new Date(),
       paymentMethod: dto.paymentMethod,
-      user,
+      user, 
       ticket,
     });
-    return this.toSafePayment(await this.paymentsRepository.save(payment));
+    
+    const savedPayment = await this.paymentsRepository.save(payment);
+    
+    // Recargamos el pago con sus relaciones completas para asegurar que el DTO devuelva el usuario vinculado
+    return this.findOne(savedPayment.id);
   }
 
   async findAll(filter: FilterPaymentDto): Promise<Payment[]> {
@@ -57,8 +76,10 @@ export class PaymentsService {
   async findPaymentPaginated(
     filter: FilterPaymentPaginatedDto,
   ): Promise<{ data: Payment[]; total: number }> {
-    const skip = (filter.page - 1) * filter.limit;
-    const take = filter.limit;
+    const page = filter.page || 1;
+    const limit = filter.limit || 10;
+    const skip = (page - 1) * limit;
+    
     const where: FindOptionsWhere<Payment> = {};
     if (filter.ticketId !== undefined) where.ticket = { id: filter.ticketId };
     if (filter.date !== undefined) where.paymentDate = filter.date;
@@ -69,10 +90,10 @@ export class PaymentsService {
       relations: { user: true, ticket: true },
       order: { id: 'DESC' },
       skip,
-      take,
+      take: limit,
     });
     return {
-      data,
+      data: data.map((payment) => this.toSafePayment(payment)),
       total,
     };
   }
@@ -102,8 +123,12 @@ export class PaymentsService {
         'No se puede modificar un pago asociado a un ticket; el check-out lo administra',
       );
     }
-    if (currentUser.id !== undefined) {
-      payment.user.id = (await this.findUser(currentUser.id)).id;
+    if (currentUser && currentUser.id !== undefined) {
+      try {
+        payment.user = (await this.findUser(currentUser.id)) as any;
+      } catch {
+        // Mantiene usuario anterior si falla
+      }
     }
     if (dto.amount !== undefined) payment.amount = dto.amount;
     if (dto.paymentDate !== undefined)
@@ -149,15 +174,20 @@ export class PaymentsService {
     return user;
   }
 
-  private toSafePayment(payment: Payment): Payment {
-    if (payment.user) {
-      const { password: _password, ...publicUser } = payment.user;
-      payment.user = publicUser as User;
+  private toSafePayment(payment: any): any {
+    const result = {
+      ...payment,
+      date: payment.paymentDate || payment.date,
+      method: payment.paymentMethod || payment.method,
+    };
+    if (result.user) {
+      const { password: _password, ...publicUser } = result.user;
+      result.user = publicUser;
     }
-    if (payment.ticket?.user) {
-      const { password: _password, ...publicUser } = payment.ticket.user;
-      payment.ticket.user = publicUser as User;
+    if (result.ticket?.user) {
+      const { password: _password, ...publicUser } = result.ticket.user;
+      result.ticket.user = publicUser;
     }
-    return payment;
+    return result;
   }
 }
