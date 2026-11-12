@@ -15,22 +15,48 @@ export class ReservationEntity extends AuditEntity {
   @Column({ type: 'int', nullable: true, comment: 'User ID' })
   userId: number | null;
 
-  @Column({ type: 'varchar', length: 20, nullable: true, comment: 'Vehicle ID' })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    nullable: true,
+    comment: 'Vehicle ID',
+  })
   vehiclePlateNumber: string | null;
 
   @Column({ type: 'int', nullable: false, comment: 'Parking space ID' })
   parkingSpaceId: number;
 
-  // Mucho a uno:
-  // Muchas reservas pueden ser hechas por un solo usuario
-  @ManyToOne(() => UserEntity, (user) => user.reservations)
+  @Column({
+    type: 'varchar',
+    unique: true,
+    comment: 'Unique token encoded in the QR code for validation',
+  })
+  qrCode: string;
+
+  @Column({
+    type: 'varchar',
+    comment: 'Email address where the QR code and reservation info are sent',
+  })
+  guestEmail: string;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+    comment: 'Status of the QR email notification',
+  })
+  emailSent: boolean;
+
+  // Relaciones
+  @ManyToOne(() => UserEntity, (user) => user.reservations, { nullable: true })
   user: UserEntity | null;
 
-  // Mucho a uno:
-  // Muchos espacios de estacionamiento pueden tener muchas reservas
-  @ManyToOne(() => ParkingSpace, (parkingSpace) => parkingSpace.reservations)
-  parkingSpace: ParkingSpace;
+  @ManyToOne(() => ParkingSpace, (parkingSpace) => parkingSpace.reservations, {
+    nullable: true,
+  })
+  parkingSpace: ParkingSpace | null;
 
-  @OneToOne(() => TicketEntity, (ticket) => ticket.reservation)
+  @OneToOne(() => TicketEntity, (ticket) => ticket.reservation, {
+    nullable: true,
+  })
   ticket: TicketEntity | null;
 }
