@@ -13,12 +13,9 @@ import { ParkingSpace } from '../parking/entities/parking-space.entity';
 import { TicketEntity } from '../tickets/entities/ticket.entity';
 import { UserEntity } from '../users/entities/users.entity';
 import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
-import { TicketEntity } from '../tickets/entities/ticket.entity';
-import { UserEntity } from '../users/entities/users.entity';
-import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { ReservationEntityEntity } from './entities/reservation.entity';
+import { ReservationEntity } from './entities/reservation.entity';
 import { CurrentUserType } from '../../shared/decorator/current-user.decorator';
 import { ParkingSpaceStatus } from '../parking/enum/parking-space-status.enum';
 
@@ -33,7 +30,7 @@ export class ReservationsService {
   async create(
     dto: CreateReservationDto,
     currentUser: CurrentUserType,
-  ): Promise<ReservationEntityEntity> {
+  ): Promise<ReservationEntity> {
     const reservationId = await this.dataSource.transaction(async (manager) => {
       const startTime = this.parseDate(dto.startTime, 'startTime');
       const endTime = this.parseDate(dto.endTime, 'endTime');

@@ -1,7 +1,6 @@
 import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../shared/dtos/pagination.dto';
 import { TicketEntity } from '../entities/ticket.entity';
-import { TicketEntity } from '../entities/ticket.entity';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { IsOptional, IsString } from 'class-validator';
 
@@ -52,8 +51,6 @@ export class TicketDto {
     const dto = new TicketDto();
     dto.id = ticket.id;
     dto.code = ticket.code;
-    dto.plateNumber = ticket.vehiclePlateNumber; 
-    dto.spotNumber = ticket.spot?.spaceNumber;
     dto.entranceAt = ticket.entranceAt;
     dto.exitAt = ticket.exitAt;
     dto.status = ticket.status;

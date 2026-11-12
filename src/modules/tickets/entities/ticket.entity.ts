@@ -1,13 +1,8 @@
 import { Column, OneToOne, Entity, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
-import { UserEntity } from '../../users/entities/users.entity';
-import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
 import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
-import { ReservationEntity } from '../../reservations/entities/reservation.entity';
-import { RateEntity } from '../../rates/entities/rate.entity';
 import { ReservationEntity } from '../../reservations/entities/reservation.entity';
 import { RateEntity } from '../../rates/entities/rate.entity';
 import { Payment } from '../../payments/entities/payment.entity';
