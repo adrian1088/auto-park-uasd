@@ -1,10 +1,12 @@
 import { Column, Entity, ManyToOne, OneToOne } from 'typeorm';
 import { AuditEntity } from '../../../shared/base/audit.entity';
 import { UserEntity } from '../../users/entities/users.entity';
+import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 import { TicketEntity } from '../../tickets/entities/ticket.entity';
 
 @Entity({ name: 'reservations', comment: 'Reservations table' })
+export class ReservationEntity extends AuditEntity {
 export class ReservationEntity extends AuditEntity {
   @Column({ type: 'timestamp', comment: 'Start time of the reservation' })
   startTime: Date;

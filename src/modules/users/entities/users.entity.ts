@@ -68,7 +68,11 @@ export class UserEntity extends AuditEntity {
 
   @OneToMany(() => ReservationEntity, (reservation) => reservation.user)
   reservations: ReservationEntity[];
+  @OneToMany(() => ReservationEntity, (reservation) => reservation.user)
+  reservations: ReservationEntity[];
 
+  @OneToMany(() => TicketEntity, (ticket) => ticket.user)
+  tickets: TicketEntity[];
   @OneToMany(() => TicketEntity, (ticket) => ticket.user)
   tickets: TicketEntity[];
 

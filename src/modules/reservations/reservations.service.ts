@@ -13,9 +13,12 @@ import { ParkingSpace } from '../parking/entities/parking-space.entity';
 import { TicketEntity } from '../tickets/entities/ticket.entity';
 import { UserEntity } from '../users/entities/users.entity';
 import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
+import { TicketEntity } from '../tickets/entities/ticket.entity';
+import { UserEntity } from '../users/entities/users.entity';
+import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { ReservationEntity } from './entities/reservation.entity';
+import { ReservationEntityEntity } from './entities/reservation.entity';
 import { CurrentUserType } from '../../shared/decorator/current-user.decorator';
 import { ParkingSpaceStatus } from '../parking/enum/parking-space-status.enum';
 
@@ -30,11 +33,38 @@ export class ReservationsService {
   async create(
     dto: CreateReservationDto,
     currentUser: CurrentUserType,
-  ): Promise<ReservationEntity> {
+  ): Promise<ReservationEntityEntity> {
     const reservationId = await this.dataSource.transaction(async (manager) => {
       const startTime = this.parseDate(dto.startTime, 'startTime');
       const endTime = this.parseDate(dto.endTime, 'endTime');
       this.validatePeriod(startTime, endTime);
+
+/*
+      //Validar que el espacio de estacionamiento existe y está libre (FREE) antes de crear la reserva
+      const parkingSpace = await manager.getRepository(ParkingSpace).findOne({
+       where: { id: dto.parkingSpaceId }, 
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!parkingSpace) {
+        throw new NotFoundException('El espacio de estacionamiento especificado no existe');
+      }
+      // Validar que el espacio de estacionamiento está libre 
+      if (parkingSpace.status !== ParkingSpaceStatus.FREE) {
+        throw new ConflictException('El espacio de estacionamiento especificado no está disponible para reservación.');
+      }
+
+      // Validar que el usuario existe
+      const User = await this.findUser(manager, dto.userId);
+      const Vehicle = dto.vehicleId == null ? null : await this.findVehicle(manager, dto.vehicleId);   
+      
+      parkingSpace.status = ParkingSpaceStatus.RESERVED;
+      await manager.getRepository(ParkingSpace).save(parkingSpace);
+*/
+//.....
+
+
+
 
       const parkingSpace = await this.lockParkingSpace(
         manager,

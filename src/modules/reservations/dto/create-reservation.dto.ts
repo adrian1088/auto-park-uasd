@@ -9,13 +9,13 @@ import {
 } from 'class-validator';
 
 export class CreateReservationDto {
-  @ApiProperty({ type: String, format: 'date-time' })
-  @IsDateString()
-  startTime: string;
+	@ApiProperty({ type: String, format: 'date-time' })
+	@IsDateString()
+	startTime: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
-  @IsDateString()
-  endTime: string;
+	@ApiProperty({ type: String, format: 'date-time' })
+	@IsDateString()
+	endTime: string;
 
   @ApiProperty({
     type: Number,

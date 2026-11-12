@@ -1,6 +1,7 @@
 import { ApiPropertyOptional, ApiResponseProperty, IntersectionType } from '@nestjs/swagger';
 import { PaginationDto } from '../../../shared/dtos/pagination.dto';
 import { TicketEntity } from '../entities/ticket.entity';
+import { TicketEntity } from '../entities/ticket.entity';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { IsOptional, IsString } from 'class-validator';
 
@@ -17,16 +18,6 @@ export class TicketDto {
   })
   code: string;
 
-@ApiResponseProperty({
-    type: 'string', 
-    example: 'A-892-XYZ' })
-    plateNumber?: string; 
-
-  @ApiResponseProperty({ 
-    type: 'string', 
-    example: 'A-12' })
-   spotNumber?: string; 
-   
   @ApiResponseProperty({
     type: 'string',
     example: '2024-06-01T12:00:00Z',
@@ -39,13 +30,13 @@ export class TicketDto {
   })
   exitAt: Date | null;
 
-  @ApiResponseProperty({
+   @ApiResponseProperty({
     enum: TicketStatus,
     example: TicketStatus.ACTIVE,
   })
   status: TicketStatus;
 
-  @ApiResponseProperty({
+   @ApiResponseProperty({
     type: 'number',
     example: 50.00,
   })

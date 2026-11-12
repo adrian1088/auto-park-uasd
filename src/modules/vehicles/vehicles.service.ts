@@ -7,8 +7,10 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserEntity } from '../users/entities/users.entity';
+import { UserEntity } from '../users/entities/users.entity';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
+import { VehicleEntity } from './entities/vehicle.entity';
 import { VehicleEntity } from './entities/vehicle.entity';
 
 @Injectable()
@@ -18,8 +20,13 @@ export class VehiclesService {
     private readonly vehiclesRepository: Repository<VehicleEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehiclesRepository: Repository<VehicleEntity>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepository: Repository<UserEntity>,
   ) {}
 
+  async create(createVehicleDto: CreateVehicleDto): Promise<VehicleEntity> {
   async create(createVehicleDto: CreateVehicleDto): Promise<VehicleEntity> {
     await this.ensurePlateAvailable(createVehicleDto.plateNumber);
     const vehicle = this.vehiclesRepository.create({
@@ -40,6 +47,7 @@ export class VehiclesService {
   }
 
   async findOne(id: number): Promise<VehicleEntity> {
+  async findOne(id: number): Promise<VehicleEntity> {
     const vehicle = await this.vehiclesRepository.findOne({
       where: { id },
     });
@@ -49,6 +57,7 @@ export class VehiclesService {
     return vehicle;
   }
 
+  async update(id: number, updateVehicleDto: UpdateVehicleDto): Promise<VehicleEntity> {
   async update(id: number, updateVehicleDto: UpdateVehicleDto): Promise<VehicleEntity> {
     if (
       Object.entries(updateVehicleDto).some(
