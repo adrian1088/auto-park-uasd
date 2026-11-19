@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { IMailConfig } from '../../config/mail.config';
 import { ConfigService } from '@nestjs/config';
-import  nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
+import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import Handlebars from 'handlebars';
-
 
 @Injectable()
 export class MailerService {
@@ -43,12 +43,27 @@ export class MailerService {
       })(context);
     }
 
+    const logoBase64 = await fs.readFile(
+      path.join(__dirname, 'assets', 'logo.png'),
+      { encoding: 'base64' },
+    );
+
     await this.transporter.sendMail({
       ...mailOptions,
       from: mailOptions.from
         ? mailOptions.from
         : `"${this.mailConfig.defaultName}" <${this.mailConfig.defaultEmail}>`,
       html: mailOptions.html ? mailOptions.html : html,
+      attachments: [
+        ...(mailOptions.attachments ?? []),
+        {
+          filename: 'logo.png',
+          content: Buffer.from(logoBase64, 'base64'),
+          contentType: 'image/png',
+          contentDisposition: 'inline',
+          cid: 'autoparkLogo',
+        },
+      ],
     });
   }
 }

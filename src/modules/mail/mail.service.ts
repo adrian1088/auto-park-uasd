@@ -12,7 +12,9 @@ export class MailService {
     private readonly configService: ConfigService,
   ) {}
 
-  async sendTokenActivationEmail(mailData: MailData<{ hash: string; url: string }>): Promise<void> {
+  async sendTokenActivationEmail(
+    mailData: MailData<{ hash: string; url: string }>,
+  ): Promise<void> {
     const config = this.configService.getOrThrow<AppConfigType>('app', {
       infer: true,
     });
@@ -138,6 +140,54 @@ export class MailService {
         startDate: formattedStart,
         endDate: formattedEnd,
       },
+    });
+  }
+
+  async sendReservationEmail(
+    mailData: MailData<{
+      name: string;
+      startTime: string;
+      endTime: string;
+      url: string;
+      hash: string;
+      parkingSpace: string;
+      qrBuffer: Buffer;
+    }>,
+  ): Promise<void> {
+    const config = this.configService.getOrThrow<AppConfigType>('app', {
+      infer: true,
+    });
+    const templatePath = path.join(
+      config.workingDirectory,
+      'src',
+      'modules',
+      'mail',
+      'mail-templates',
+      'reservation.hbs',
+    );
+
+    await this.mailerService.sendMail({
+      to: mailData.to,
+      subject: '🎫 Reservación Confirmada - AutoPark UASD',
+      templatePath: templatePath,
+      context: {
+        title: 'Reservación Confirmada',
+        name: mailData.data.name,
+        startTime: mailData.data.startTime,
+        endTime: mailData.data.endTime,
+        url: `${config.frontendDomain}/${mailData.data.url}`,
+        hash: mailData.data.hash,
+        parkingSpace: mailData.data.parkingSpace,
+      },
+      attachments: [
+        {
+          filename: 'qrcode.png',
+          content: mailData.data.qrBuffer,
+          contentType: 'image/png',
+          contentDisposition: 'inline',
+          cid: 'reservationQRCode',
+        },
+      ],
     });
   }
 }
