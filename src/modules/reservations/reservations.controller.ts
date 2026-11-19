@@ -9,6 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { MailService } from '../mail/mail.service';
 import { CurrentUser } from '../../shared/decorator/current-user.decorator';
 import { CurrentUserType } from '../../shared/decorator/current-user.decorator';
 import { ApiTags } from '@nestjs/swagger';
@@ -18,11 +19,16 @@ import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ResponsePaginatedDto } from '../../shared/dtos/response-paginated.dto';
+import QRCode from 'qrcode';
+import crypto from 'node:crypto';
+
 
 @ApiTags('Reservations')
 @Controller('reservations')
 export class ReservationsController {
-  constructor(private readonly reservationsService: ReservationsService) {}
+  constructor(private readonly reservationsService: ReservationsService,
+    private readonly mailService: MailService
+  ) {}
 
   @Post()
   @ApiResponseType(ReservationDto)
@@ -82,5 +88,27 @@ export class ReservationsController {
   @Delete(':id')
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.reservationsService.remove(id);
+  }
+
+  @Post('send-mail')
+  async sendMail(
+    @Body() createReservationDto: CreateReservationDto,
+    @CurrentUser() currentUser: CurrentUserType,
+  ) {
+    const qrCodeToken = `RES-QR-${crypto.randomUUID()}`;
+     // Generar el buffer del código QR en lugar de una URL en base64
+      const qrBuffer = await QRCode.toBuffer(qrCodeToken); // Replace 'some-hash' with actual hash if available
+    await this.mailService.sendReservationEmail({
+      to: currentUser.email,
+      data: {
+        name: currentUser.name,
+        startTime: createReservationDto.startTime,
+        endTime: createReservationDto.endTime,
+        url: 'reservation',
+        hash: qrCodeToken, // Replace with actual hash if available
+        parkingSpace: 'Piso 1, espacio A-05', // Replace with actual parking space if available
+        qrBuffer: qrBuffer,
+      },
+    });
   }
 }

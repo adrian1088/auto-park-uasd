@@ -23,7 +23,7 @@ export class MailerService {
           : undefined,
       ignoreTLS: this.mailConfig.ignoreTls,
       secure: this.mailConfig.secure,
-      requireTLS: this.mailConfig.requireTls,
+      requireTLS: this.mailConfig.requireTls,      
     });
   }
 
