@@ -12,7 +12,7 @@ export class MailService {
     private readonly configService: ConfigService,
   ) {}
 
-  async sendTokenActivationEmail(mailData: MailData<{ hash: string, url: string }>): Promise<void> {
+  async sendTokenActivationEmail(mailData: MailData<{ hash: string; url: string }>): Promise<void> {
     const config = this.configService.getOrThrow<AppConfigType>('app', {
       infer: true,
     });
@@ -92,6 +92,51 @@ export class MailService {
         text2,
         text3,
         text4,
+      },
+    });
+  }
+
+  async sendSubscriptionQrEmail(
+    mailData: MailData<{
+      name: string;
+      spaceNumber: string;
+      qrCode: string;
+      startDate: Date | string;
+      endDate: Date | string;
+    }>,
+  ): Promise<void> {
+    const config = this.configService.getOrThrow<AppConfigType>('app', {
+      infer: true,
+    });
+
+    const subject = '¡Tu espacio exclusivo 24/7 y Código QR - AutoPark UASD!';
+    const qrImageUrl = `https://quickchart.io/qr?text=${encodeURIComponent(mailData.data.qrCode)}&size=200&margin=2`;
+    const formattedStart = new Date(mailData.data.startDate).toLocaleDateString('es-DO');
+    const formattedEnd = new Date(mailData.data.endDate).toLocaleDateString('es-DO');
+
+    const templatePath = path.join(
+      config.workingDirectory,
+      'src',
+      'modules',
+      'mail',
+      'mail-templates',
+      'subscription-qr.hbs',
+    );
+
+    await this.mailerService.sendMail({
+      to: mailData.to,
+      subject,
+      text: `Hola ${mailData.data.name}, tu espacio asignado es #${mailData.data.spaceNumber}. Código QR: ${mailData.data.qrCode}. Vigencia: ${formattedStart} al ${formattedEnd}.`,
+      templatePath,
+      context: {
+        title: subject,
+        app_name: this.configService.get('app.name', { infer: true }) || 'AutoPark UASD',
+        name: mailData.data.name,
+        spaceNumber: mailData.data.spaceNumber,
+        qrCode: mailData.data.qrCode,
+        qrImageUrl,
+        startDate: formattedStart,
+        endDate: formattedEnd,
       },
     });
   }

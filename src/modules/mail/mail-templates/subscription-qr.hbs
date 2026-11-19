@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}}</title>
+</head>
+
+<body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f8fafc;">
+    <table style="border:0; width:100%; max-width:600px; margin: 20px auto; background:#ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <tr style="background:#0f172a;">
+            <td style="padding:20px; color:#ffffff; text-align:center; font-size:26px; font-weight:700;">
+                {{app_name}}
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:24px; color:#334155; font-size:15px; line-height: 1.6;">
+                <h2 style="color:#0284c7; margin-top:0; text-align:center;">¡Bienvenido al sistema de Abonados, {{name}}!</h2>
+                <p>Tu suscripción de estacionamiento en la <strong>UASD</strong> ha sido procesada con éxito.</p>
+                
+                <div style="background-color:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:14px; margin:18px 0; text-align:center;">
+                    <span style="font-size:13px; color:#166534; display:block;">Espacio Asignado (24/7):</span>
+                    <strong style="font-size:22px; color:#15803d;">Espacio #{{spaceNumber}}</strong>
+                </div>
+
+                <p style="margin: 12px 0;"><strong>Periodo de Vigencia:</strong> {{startDate}} al {{endDate}}</p>
+                <p style="margin: 12px 0;"><strong>Código de Token:</strong> <code style="background:#f1f5f9; padding:2px 6px; border-radius:4px;">{{qrCode}}</code></p>
+
+                <div style="text-align:center; margin:25px 0;">
+                    <p style="margin-bottom:10px; font-weight:bold; color:#0f172a;">Tu Código QR de Acceso:</p>
+                    <img src="{{qrImageUrl}}" alt="Código QR de Acceso" style="width:180px; height:180px; border:4px solid #f1f5f9; border-radius:8px;" />
+                </div>
+
+                <p style="margin-top:20px; font-size:13px; color:#64748b; text-align:center;">
+                    Dirígete a tu espacio asignado al ingresar. Puedes acceder mediante lectura de placa LPR o mostrando este código QR en las entradas.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

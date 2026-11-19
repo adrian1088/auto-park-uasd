@@ -7,33 +7,22 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer';
 import { Subscription } from './entities/subscription.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
 import { UpdateSubscriptionDto } from './dto/update-subscription.dto';
 import { FilterSubscriptionPaginatedDto } from './dto/subscription.dto';
 import { SubscriptionStatus } from './enum/subscription-status.enum';
 import { PaymentsService } from '../payments/payments.service';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class SubscriptionsService {
-  private transporter: nodemailer.Transporter;
-
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepository: Repository<Subscription>,
     private readonly paymentsService: PaymentsService,
-  ) {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST || 'smtp.gmail.com',
-      port: Number(process.env.MAIL_PORT) || 587,
-      secure: false,
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-  }
+    private readonly mailService: MailService,
+  ) {}
 
   async create(createDto: CreateSubscriptionDto, currentUser?: any): Promise<Subscription> {
     try {
@@ -70,23 +59,50 @@ export class SubscriptionsService {
 
       const subscriptionWithRelations = await this.findOne(savedSub.id);
 
-      // Enviar correo electrónico con QR 
+      // Enviar correo electrónico con QR usando MailService y plantilla Handlebars
       if (subscriptionWithRelations.user?.email) {
-        try {
-          const spaceNumber = subscriptionWithRelations.parkingSpace?.spaceNumber || 'Asignado 24/7';
-          await this.sendSubscriptionEmail(
-            subscriptionWithRelations.user.email,
-            subscriptionWithRelations.user.name,
+        const spaceNumber =
+          subscriptionWithRelations.parkingSpace?.spaceNumber || 'Asignado 24/7';
+        const mailPayload = {
+          to: subscriptionWithRelations.user.email,
+          data: {
+            name: subscriptionWithRelations.user.name,
             spaceNumber,
-            qrCodeToken,
-            subscriptionWithRelations.startDate,
-            subscriptionWithRelations.endDate,
-          );
+            qrCode: qrCodeToken,
+            startDate: subscriptionWithRelations.startDate,
+            endDate: subscriptionWithRelations.endDate,
+          },
+        };
+
+        try {
+          console.log('[SUB-MAIL] Intentando enviar QR a:', mailPayload.to, {
+            subscriptionId: subscriptionWithRelations.id,
+            spaceNumber,
+            qrCode: qrCodeToken,
+            startDate: subscriptionWithRelations.startDate,
+            endDate: subscriptionWithRelations.endDate,
+          });
+
+          await this.mailService.sendSubscriptionQrEmail(mailPayload);
+
           subscriptionWithRelations.emailSent = true;
           await this.subscriptionRepository.save(subscriptionWithRelations);
-        } catch (mailError) {
-          console.error('Error al enviar el correo de suscripción con el QR:', mailError);
+
+          console.log('[SUB-MAIL] Correo QR enviado correctamente a:', mailPayload.to);
+        } catch (mailError: any) {
+          console.error('[SUB-MAIL][ERROR ENVIANDO QR]', {
+            message: mailError?.message,
+            code: mailError?.code,
+            path: mailError?.path,
+            stack: mailError?.stack,
+            payload: mailPayload,
+          });
         }
+      } else {
+        console.warn('[SUB-MAIL] La suscripción no tiene user.email, se omite envío de QR:', {
+          subscriptionId: subscriptionWithRelations.id,
+          userId: subscriptionWithRelations.userId,
+        });
       }
 
       // Registrar pago automático en caja
@@ -248,7 +264,7 @@ export class SubscriptionsService {
     for (const sub of activeSubs) {
       if (excludeId && sub.id === excludeId) continue;
       if (!sub.plateNumbers) continue;
-      
+
       const existingPlates = sub.plateNumbers
         .split(',')
         .map((p) => p.trim().toUpperCase());
@@ -261,47 +277,5 @@ export class SubscriptionsService {
         );
       }
     }
-  }
-
- private async sendSubscriptionEmail(
-    email: string,
-    name: string,
-    spaceNumber: string,
-    qrCode: string,
-    startDate: Date,
-    endDate: Date,
-  ) {
-    const qrImageUrl = `https://quickchart.io/qr?text=${encodeURIComponent(qrCode)}&size=200&margin=2`;
-
-    const mailOptions = {
-      from: process.env.MAIL_FROM || '"AutoPark UASD" <autoparkuasd@gmail.com>',
-      to: email,
-      subject: '¡Tu espacio exclusivo 24/7 y Código QR - AutoPark UASD!',
-      html: `
-        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: auto; border: 1px solid #e2e8f0; border-radius: 8px;">
-          <h2 style="color: #0284c7; text-align: center;">¡Bienvenido al sistema de Abonados, ${name}!</h2>
-          <p>Tu suscripción de estacionamiento en la <strong>UASD</strong> ha sido procesada con éxito.</p>
-          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          
-          <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 12px; margin-bottom: 16px; text-align: center;">
-            <span style="font-size: 14px; color: #166534;">Espacio Asignado (24/7):</span><br/>
-            <strong style="font-size: 22px; color: #15803d;">Espacio #${spaceNumber}</strong>
-          </div>
-
-          <p><strong>Periodo de Vigencia:</strong> ${new Date(startDate).toLocaleDateString()} al ${new Date(endDate).toLocaleDateString()}</p>
-          
-          <div style="text-align: center; margin: 25px 0;">
-            <p style="margin-bottom: 10px;"><strong>Tu Código QR de Acceso:</strong></p>
-            <img src="${qrImageUrl}" alt="Código QR de Acceso" style="width: 180px; height: 180px; border: 4px solid #f1f5f9; border-radius: 8px;" />
-          </div>
-          
-          <p style="margin-top: 25px; font-size: 13px; color: #64748b; text-align: center;">
-            Dirígete a tu espacio asignado al ingresar. Puedes acceder mediante lectura de placa LPR o mostrando este código QR en las entradas.
-          </p>
-        </div>
-      `,
-    };
-
-    await this.transporter.sendMail(mailOptions);
   }
 }

@@ -63,11 +63,16 @@ export class AuthService {
       ttlHours: config.defaultTokenActivationTtlHours,
     });
 
-    if (savedUser && tokens) {
-      await this.mailService.sendTokenActivationEmail({
-        to: savedUser.email,
-        data: { hash: tokens.token, url: 'activate-email' },
-      });
+if (savedUser && tokens) {
+      try {
+        await this.mailService.sendTokenActivationEmail({
+          to: savedUser.email,
+          data: { hash: tokens.token, url: 'activate-email' },
+        });
+      } catch (error) {
+        console.error('No se pudo enviar el correo de activación:', error);
+        // Opcional: puedes decidir si lanzas el error o dejas que el usuario continúe y lo reenvíe después
+      }
     }
     return savedUser;
   }

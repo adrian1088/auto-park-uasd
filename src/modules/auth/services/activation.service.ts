@@ -109,30 +109,32 @@ export class ActivationService {
       throw new NotFoundException('Email del usuario no encontrado');
     }
 
-    // 1. Generar un nuevo token de activación y su hash
     const token = randomUUID();
     const tokenHash = createHash('sha256').update(token).digest('hex');
     const newActivationToken = this.activationRepository.create({
       userId: user.id,
       tokenHash: tokenHash,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 horas
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
     await this.activationRepository.save(newActivationToken);
 
-    // 2. Invaliudar token anterior
     await this.activationRepository.update(
       { userId: user.id, acceptedAt: null },
       { expiresAt: new Date() },
     );
 
-    // 3. Enviar el correo de activación con el token generado
-    await this.mailService.sendTokenActivationEmail({
-      to: user.email,
-      data: {
-        hash: tokenHash,
-        url: 'activate-email',
-      },
-    });
+    try {
+      await this.mailService.sendTokenActivationEmail({
+        to: user.email,
+        data: {
+          hash: tokenHash,
+          url: 'activate-email',
+        },
+      });
+    } catch (error) {
+      console.error('No se pudo enviar el correo de activación:', error);
+    }
+
     return newActivationToken;
   }
 
