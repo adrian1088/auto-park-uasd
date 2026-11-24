@@ -1,11 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, EntityManager } from 'typeorm';
 import * as crypto from 'crypto';
 import { Subscription } from './entities/subscription.entity';
 import { CreateSubscriptionDto } from './dto/create-subscription.dto';
@@ -14,6 +15,13 @@ import { FilterSubscriptionPaginatedDto } from './dto/subscription.dto';
 import { SubscriptionStatus } from './enum/subscription-status.enum';
 import { PaymentsService } from '../payments/payments.service';
 import { MailService } from '../mail/mail.service';
+
+export enum ParkingSpaceStatus {
+  FREE = 'FREE',
+  OCCUPIED = 'OCCUPIED',
+  RESERVED = 'RESERVED',
+  OUT_OF_SERVICE = 'OUT_OF_SERVICE',
+}
 
 @Injectable()
 export class SubscriptionsService {
@@ -24,14 +32,40 @@ export class SubscriptionsService {
     private readonly mailService: MailService,
   ) {}
 
+  private async setSpaceStatus(
+    manager: EntityManager,
+    spaceId: number,
+    status: ParkingSpaceStatus,
+    checkAvailability = false,
+  ): Promise<void> {
+    const space = await manager.findOne('ParkingSpace', {
+      where: { id: spaceId },
+    });
+
+    if (!space) {
+      throw new NotFoundException(`Espacio de parqueo #${spaceId} no encontrado.`);
+    }
+
+    const currentStatus = (space as any).status;
+    if (
+      checkAvailability &&
+      status === ParkingSpaceStatus.RESERVED &&
+      currentStatus !== ParkingSpaceStatus.FREE
+    ) {
+      throw new BadRequestException(
+        `El espacio ${(space as any).spaceNumber || `#${spaceId}`} no está disponible (estado actual: ${currentStatus}).`,
+      );
+    }
+
+    await manager.update('ParkingSpace', { id: spaceId }, { status });
+  }
+
   async create(createDto: CreateSubscriptionDto, currentUser?: any): Promise<Subscription> {
     try {
-      // Validar duplicidad de placas solo si se proporcionan placas
       if (createDto.plateNumbers && createDto.plateNumbers.trim() !== '') {
         await this.validatePlateUniqueness(createDto.plateNumbers);
       }
 
-      // Obtener el monto de la tarifa asignada
       let paymentAmount = 3000;
       try {
         const rate = await this.subscriptionRepository.manager.findOne('Rate', {
@@ -44,22 +78,36 @@ export class SubscriptionsService {
         console.error('Error al obtener la tarifa para la suscripción:', e);
       }
 
-      // Generar token único para el código QR
       const qrCodeToken = `SUB-QR-${crypto.randomUUID()}`;
+      const normalizedSpaceId = createDto.parkingSpaceId
+        ? Number(createDto.parkingSpaceId)
+        : null;
 
-      // Crear y guardar la suscripción
-      const subscription = this.subscriptionRepository.create({
-        ...createDto,
-        plateNumbers: createDto.plateNumbers || null,
-        parkingSpaceId: createDto.parkingSpaceId ? Number(createDto.parkingSpaceId) : null,
-        qrCode: qrCodeToken,
-        emailSent: false,
-      });
-      const savedSub = await this.subscriptionRepository.save(subscription);
+      const savedSub = await this.subscriptionRepository.manager.transaction(
+        async (manager) => {
+          if (normalizedSpaceId) {
+            await this.setSpaceStatus(
+              manager,
+              normalizedSpaceId,
+              ParkingSpaceStatus.RESERVED,
+              true,
+            );
+          }
+
+          const subscription = manager.create(Subscription, {
+            ...createDto,
+            plateNumbers: createDto.plateNumbers || null,
+            parkingSpaceId: normalizedSpaceId,
+            qrCode: qrCodeToken,
+            emailSent: false,
+          });
+
+          return await manager.save(Subscription, subscription);
+        },
+      );
 
       const subscriptionWithRelations = await this.findOne(savedSub.id);
 
-      // Enviar correo electrónico con QR usando MailService y plantilla Handlebars
       if (subscriptionWithRelations.user?.email) {
         const spaceNumber =
           subscriptionWithRelations.parkingSpace?.spaceNumber || 'Asignado 24/7';
@@ -75,20 +123,9 @@ export class SubscriptionsService {
         };
 
         try {
-          console.log('[SUB-MAIL] Intentando enviar QR a:', mailPayload.to, {
-            subscriptionId: subscriptionWithRelations.id,
-            spaceNumber,
-            qrCode: qrCodeToken,
-            startDate: subscriptionWithRelations.startDate,
-            endDate: subscriptionWithRelations.endDate,
-          });
-
           await this.mailService.sendSubscriptionQrEmail(mailPayload);
-
           subscriptionWithRelations.emailSent = true;
           await this.subscriptionRepository.save(subscriptionWithRelations);
-
-          console.log('[SUB-MAIL] Correo QR enviado correctamente a:', mailPayload.to);
         } catch (mailError: any) {
           console.error('[SUB-MAIL][ERROR ENVIANDO QR]', {
             message: mailError?.message,
@@ -98,36 +135,30 @@ export class SubscriptionsService {
             payload: mailPayload,
           });
         }
-      } else {
-        console.warn('[SUB-MAIL] La suscripción no tiene user.email, se omite envío de QR:', {
-          subscriptionId: subscriptionWithRelations.id,
-          userId: subscriptionWithRelations.userId,
-        });
       }
 
-      // Registrar pago automático en caja
-      try {
-        await this.paymentsService.create(
-          {
-            amount: paymentAmount,
-            paymentMethod: 'CASH' as any,
-            ticketId: undefined,
-            userId: savedSub.userId,
-          },
-          currentUser,
-        );
-      } catch (error) {
-        console.error('Error al registrar pago automático por nueva suscripción:', error);
-      }
+      // Registra el pago inicial de la suscripción en la tabla payments
+      await this.paymentsService.createSubscriptionPayment(
+        {
+          amount: paymentAmount,
+          paymentMethod: (createDto as any).paymentMethod || 'CASH',
+          userId: savedSub.userId,
+        },
+        currentUser,
+      );
 
       return subscriptionWithRelations;
     } catch (error: any) {
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       console.error('Error crítico al crear suscripción:', error);
       throw new InternalServerErrorException(
-        error?.message || 'Ocurrió un error inesperado al registrar el cliente fijo.'
+        error?.message || 'Ocurrió un error inesperado al registrar el cliente fijo.',
       );
     }
   }
@@ -202,12 +233,42 @@ export class SubscriptionsService {
       await this.validatePlateUniqueness(updateDto.plateNumbers, id);
     }
 
-    if (updateDto.parkingSpaceId !== undefined) {
-      sub.parkingSpaceId = updateDto.parkingSpaceId ? Number(updateDto.parkingSpaceId) : null;
-    }
+    const previousSpaceId = sub.parkingSpaceId ? Number(sub.parkingSpaceId) : null;
+    const hasSpaceChange = updateDto.parkingSpaceId !== undefined;
+    const nextSpaceId = hasSpaceChange
+      ? updateDto.parkingSpaceId
+        ? Number(updateDto.parkingSpaceId)
+        : null
+      : previousSpaceId;
 
-    Object.assign(sub, updateDto);
-    const saved = await this.subscriptionRepository.save(sub);
+    const saved = await this.subscriptionRepository.manager.transaction(
+      async (manager) => {
+        if (hasSpaceChange && previousSpaceId !== nextSpaceId) {
+          if (previousSpaceId) {
+            await this.setSpaceStatus(
+              manager,
+              previousSpaceId,
+              ParkingSpaceStatus.FREE,
+              false,
+            );
+          }
+          if (nextSpaceId) {
+            await this.setSpaceStatus(
+              manager,
+              nextSpaceId,
+              ParkingSpaceStatus.RESERVED,
+              true,
+            );
+          }
+        }
+
+        Object.assign(sub, updateDto);
+        sub.parkingSpaceId = nextSpaceId;
+
+        return await manager.save(Subscription, sub);
+      },
+    );
+
     return await this.findOne(saved.id);
   }
 
@@ -222,11 +283,11 @@ export class SubscriptionsService {
       ? Number(renewDto.amount)
       : Number(sub.rate?.amount || 3000);
 
-    await this.paymentsService.create(
+    // Registra el pago de renovación en la tabla payments
+    await this.paymentsService.createSubscriptionPayment(
       {
         amount: paymentAmount,
         paymentMethod: renewDto.paymentMethod || 'CASH',
-        ticketId: undefined,
         userId: sub.userId,
       },
       currentUser,
@@ -245,9 +306,139 @@ export class SubscriptionsService {
     return await this.findOne(saved.id);
   }
 
+  // Entrada en garita por QR de suscripción: pasa el espacio a OCCUPIED y retorna ticket visual sin guardar en tabla tickets
+  async checkInByQr(rawCode: string) {
+    const sub = await this.findAndValidateActiveSubscriptionByQr(rawCode);
+    const spaceId = sub.parkingSpace?.id ?? sub.parkingSpaceId;
+
+    if (!spaceId) {
+      throw new BadRequestException(
+        'La suscripción no tiene un espacio de parqueo asignado.',
+      );
+    }
+
+    await this.subscriptionRepository.manager.transaction(async (manager) => {
+      await this.setSpaceStatus(
+        manager,
+        Number(spaceId),
+        ParkingSpaceStatus.OCCUPIED,
+        false,
+      );
+    });
+
+    const updatedSub = await this.findOne(sub.id);
+    const firstPlate =
+      updatedSub.plateNumbers
+        ?.split(',')
+        .map((p) => p.trim().toUpperCase())
+        .find(Boolean) || 'ABONADO';
+
+    const now = new Date();
+    return {
+      isSubscriptionPass: true,
+      subscriptionId: updatedSub.id,
+      qrCode: updatedSub.qrCode,
+      code: `SUB-${updatedSub.id}-${Date.now().toString().slice(-5)}`,
+      plateNumber: firstPlate,
+      clientName: updatedSub.user?.name || 'Cliente Fijo',
+      parkingSpaceId: Number(spaceId),
+      parkingLotId: (updatedSub.rate as any)?.parkingLot?.id ?? 1,
+      assignedSpace: updatedSub.parkingSpace?.spaceNumber || `#${spaceId}`,
+      entranceAt: now.toISOString(),
+    };
+  }
+
+  // Salida por QR de suscripción: libera el espacio al salir
+  async checkOutByQr(rawCode: string) {
+    const code = String(rawCode ?? '').trim();
+    if (!code) {
+      throw new BadRequestException('Debes proporcionar un código QR de suscripción.');
+    }
+
+    const sub = await this.subscriptionRepository.findOne({
+      where: { qrCode: code },
+      relations: { user: true, parkingSpace: true } as any,
+    });
+
+    if (!sub) {
+      throw new NotFoundException('No se encontró ninguna suscripción con ese código QR.');
+    }
+
+    const spaceId = sub.parkingSpace?.id ?? sub.parkingSpaceId;
+    if (spaceId) {
+      await this.subscriptionRepository.manager.transaction(async (manager) => {
+        await this.setSpaceStatus(
+          manager,
+          Number(spaceId),
+          ParkingSpaceStatus.FREE,
+          false,
+        );
+      });
+    }
+
+    return {
+      released: true,
+      subscriptionId: sub.id,
+      qrCode: sub.qrCode,
+      parkingSpaceId: spaceId ? Number(spaceId) : null,
+      assignedSpace: sub.parkingSpace?.spaceNumber || (spaceId ? `#${spaceId}` : null),
+      exitAt: new Date().toISOString(),
+    };
+  }
+
   async remove(id: number): Promise<Subscription> {
     const sub = await this.findOne(id);
-    return await this.subscriptionRepository.remove(sub);
+    const spaceId = sub.parkingSpaceId ? Number(sub.parkingSpaceId) : null;
+
+    return await this.subscriptionRepository.manager.transaction(
+      async (manager) => {
+        const removed = await manager.remove(Subscription, sub);
+        if (spaceId) {
+          await this.setSpaceStatus(manager, spaceId, ParkingSpaceStatus.FREE, false);
+        }
+        return removed;
+      },
+    );
+  }
+
+  private async findAndValidateActiveSubscriptionByQr(
+    rawCode: string,
+  ): Promise<Subscription> {
+    const code = String(rawCode ?? '').trim();
+    if (!code) {
+      throw new BadRequestException('Debes proporcionar un código QR de suscripción.');
+    }
+
+    const sub = await this.subscriptionRepository.findOne({
+      where: { qrCode: code },
+      relations: {
+        user: true,
+        rate: { parkingLot: true },
+        parkingSpace: { floor: { lot: true } },
+      } as any,
+    });
+
+    if (!sub) {
+      throw new NotFoundException('No se encontró ninguna suscripción con ese código QR.');
+    }
+
+    if (sub.status !== SubscriptionStatus.ACTIVE) {
+      throw new ConflictException('La suscripción no se encuentra activa.');
+    }
+
+    const now = new Date();
+    const start = new Date(sub.startDate);
+    const end = new Date(sub.endDate);
+
+    if (now < start) {
+      throw new ConflictException('La suscripción aún no ha iniciado su vigencia.');
+    }
+
+    if (now > end) {
+      throw new ConflictException('La suscripción está vencida.');
+    }
+
+    return sub;
   }
 
   private async validatePlateUniqueness(

@@ -28,4 +28,14 @@ export class GateEntryDto {
   @IsInt()
   @Min(1)
   parkingLotId?: number;
+
+  @ApiPropertyOptional({ example: 'RES-QR-...', description: 'Código QR o de reservación a validar estrictamente' })
+  @IsOptional()
+  @IsString()
+  reservationCode?: string;
+
+  @ApiPropertyOptional({ example: 'SUB-QR-...', description: 'Código QR de suscripción' })
+  @IsOptional()
+  @IsString()
+  qrCode?: string;
 }
