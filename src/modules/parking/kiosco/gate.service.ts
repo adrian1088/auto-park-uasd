@@ -2,16 +2,19 @@ import {
   BadRequestException,
   HttpException,
   Injectable,
-  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
 import { TicketEntity } from '../../tickets/entities/ticket.entity';
 import { TicketStatus } from '../../tickets/enum/ticket-status.enum';
+import { ParkingSpace } from '../../parking/entities/parking-space.entity';
+import { ParkingSpaceStatus } from '../../parking/enum/parking-space-status.enum';
 import { TicketsService } from '../../tickets/tickets.service';
 import { GateEntryDto } from '../dto/gate-entry.dto';
+
+const NO_SPACE_IN_LOT_MESSAGE = 'No hay espacios disponibles en esta localidad';
 
 @Injectable()
 export class GateService {
@@ -26,6 +29,7 @@ export class GateService {
   ];
 
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(VehicleEntity)
     private readonly vehicleRepo: Repository<VehicleEntity>,
     @InjectRepository(TicketEntity)
@@ -77,24 +81,77 @@ export class GateService {
     return `[${context}] ${String(error ?? 'Error desconocido')}`;
   }
 
-  private rethrowAsHttpError(error: unknown, context: string): never {
+  private isSpaceOrFloorIssue(lowerText: string): boolean {
+    return (
+      lowerText.includes('no hay espacio') ||
+      lowerText.includes('no hay espacios') ||
+      lowerText.includes('sin espacio') ||
+      lowerText.includes('no disponible') ||
+      lowerText.includes('no está disponible') ||
+      lowerText.includes('full') ||
+      lowerText.includes('capacidad') ||
+      lowerText.includes('floor') ||
+      lowerText.includes('piso') ||
+      lowerText.includes('space') ||
+      lowerText.includes('espacio') ||
+      lowerText.includes('localidad') ||
+      lowerText.includes('lot')
+    );
+  }
+
+  private rethrowControlledError(
+    error: unknown,
+    context: string,
+    hasAvailablePlates = true,
+  ): never {
+    const detail = this.describeError(error, context);
+    const lower = detail.toLowerCase();
+
+    if (this.isSpaceOrFloorIssue(lower) || hasAvailablePlates) {
+      this.logger.warn(`[${context}] ${NO_SPACE_IN_LOT_MESSAGE}: ${detail}`);
+      throw new BadRequestException(NO_SPACE_IN_LOT_MESSAGE);
+    }
+
     if (error instanceof HttpException) {
       this.logger.warn(
-        `[${context}] HttpException (${error.getStatus()}): ${this.describeError(error, context)}`,
+        `[${context}] HttpException (${error.getStatus()}): ${detail}`,
       );
       throw error;
     }
 
-    const detail = this.describeError(error, context);
     const stack = error instanceof Error ? error.stack : undefined;
     this.logger.error(`[${context}] Fallo capturado: ${detail}`, stack);
 
-    throw new InternalServerErrorException({
-      statusCode: 500,
-      error: 'GateEntryError',
-      context,
-      message: detail,
+    throw new BadRequestException('No hay matrículas disponibles');
+  }
+
+  private async ensureLotHasFreeSpace(parkingLotId: number): Promise<void> {
+    const freeCount = await this.dataSource
+      .getRepository(ParkingSpace)
+      .createQueryBuilder('space')
+      .innerJoin('space.floor', 'floor')
+      .innerJoin('floor.lot', 'lot')
+      .where('lot.id = :parkingLotId', { parkingLotId })
+      .andWhere('space.status = :freeStatus', {
+        freeStatus: ParkingSpaceStatus.FREE,
+      })
+      .getCount();
+
+    if (freeCount <= 0) {
+      throw new BadRequestException(NO_SPACE_IN_LOT_MESSAGE);
+    }
+  }
+
+  private async hasActiveTicket(plateNumber: string): Promise<boolean> {
+    const clean = String(plateNumber ?? '').trim().toUpperCase();
+    if (!clean) return false;
+    const found = await this.ticketRepo.findOne({
+      where: {
+        vehiclePlateNumber: clean,
+        status: TicketStatus.ACTIVE,
+      },
     });
+    return Boolean(found);
   }
 
   async getValidActivePlates(): Promise<string[]> {
@@ -115,24 +172,35 @@ export class GateService {
         (plate) => !activePlatesWithTicket.has(plate),
       );
     } catch (error) {
-      this.rethrowAsHttpError(error, 'getValidActivePlates');
+      this.rethrowControlledError(error, 'getValidActivePlates', false);
     }
   }
 
   async processEntry(dto: GateEntryDto) {
+    let validPlates: string[] = [];
     try {
       const cleanPlate = String(dto.plateNumber ?? '').trim().toUpperCase();
-      const validPlates = await this.getValidActivePlates();
+      const targetLotId = Number(dto.parkingLotId) > 0 ? Number(dto.parkingLotId) : 3;
+
+      await this.ensureLotHasFreeSpace(targetLotId);
+
+      validPlates = await this.getValidActivePlates();
 
       let targetPlate = cleanPlate;
       if (!targetPlate || targetPlate === 'RANDOM' || targetPlate === 'AUTO') {
         if (validPlates.length === 0) {
-          throw new BadRequestException(
-            'No hay matrículas disponibles sin tickets activos para simular el ingreso.',
-          );
+          throw new BadRequestException('No hay matrículas disponibles');
         }
-        const randomIndex = Math.floor(Math.random() * validPlates.length);
-        targetPlate = validPlates[randomIndex];
+        const shuffled = [...validPlates].sort(() => Math.random() - 0.5);
+        targetPlate = shuffled[0];
+      }
+
+      if (await this.hasActiveTicket(targetPlate)) {
+        const remaining = validPlates.filter((p) => p !== targetPlate);
+        if (remaining.length === 0) {
+          throw new BadRequestException('No hay matrículas disponibles');
+        }
+        targetPlate = remaining[Math.floor(Math.random() * remaining.length)];
       }
 
       let vehicle = await this.vehicleRepo.findOne({
@@ -156,12 +224,17 @@ export class GateService {
         ticket = await this.ticketsService.checkIn(
           {
             plateNumber: vehicle.plateNumber,
-            parkingLotId: dto.parkingLotId ?? undefined,
-          },
+            parkingLotId: targetLotId,
+            floorNumber: 1,
+          } as any,
           undefined,
         );
       } catch (checkInErr) {
-        this.rethrowAsHttpError(checkInErr, 'ticketsService.checkIn');
+        this.rethrowControlledError(
+          checkInErr,
+          'ticketsService.checkIn',
+          validPlates.length > 0,
+        );
       }
 
       if (ticket?.id) {
@@ -185,6 +258,10 @@ export class GateService {
         ticket?.spotNumber ??
         (ticket?.parkingSpaceId ? `#${ticket.parkingSpaceId}` : 'N/A');
 
+      if (!assignedSpace || assignedSpace === 'N/A') {
+        throw new BadRequestException(NO_SPACE_IN_LOT_MESSAGE);
+      }
+
       const rateAmount =
         ticket?.rateAmount ??
         ticket?.rate_amount ??
@@ -207,7 +284,18 @@ export class GateService {
         rate_amount: rateAmount,
       };
     } catch (error) {
-      this.rethrowAsHttpError(error, 'GateService.processEntry');
+      if (
+        error instanceof BadRequestException &&
+        this.describeError(error, 'processEntry') === 'No hay matrículas disponibles' &&
+        validPlates.length === 0
+      ) {
+        throw error;
+      }
+      this.rethrowControlledError(
+        error,
+        'GateService.processEntry',
+        validPlates.length > 0,
+      );
     }
   }
 }
