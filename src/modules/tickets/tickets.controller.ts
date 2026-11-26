@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -14,6 +17,7 @@ import {
   TicketDto,
 } from './dto/ticket.dto';
 import { CheckoutQuoteDto } from './dto/checkout-quote.dto';
+import { CheckInService } from './check-in.service';
 import { TicketsService } from './tickets.service';
 import { CheckInDto } from './dto/check-in.dto';
 import { CheckOutDto } from './dto/check-out.dto';
@@ -27,7 +31,10 @@ import {
 @ApiTags('Tickets')
 @Controller('tickets')
 export class TicketsController {
-  constructor(private readonly ticketsService: TicketsService) {}
+  constructor(
+    private readonly ticketsService: TicketsService,
+    private readonly checkInService: CheckInService,
+  ) {}
 
   @Post('check-in')
   @ApiResponseType(TicketDto)
@@ -35,7 +42,7 @@ export class TicketsController {
     @Body() dto: CheckInDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<TicketDto> {
-    const result = await this.ticketsService.checkIn(dto, user);
+    const result = await this.checkInService.checkIn(dto, user);
     return TicketDto.fromEntity(result);
   }
 
@@ -90,5 +97,11 @@ export class TicketsController {
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const ticket = await this.ticketsService.findOne(id);
     return TicketDto.fromEntity(ticket);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.ticketsService.remove(id);
   }
 }

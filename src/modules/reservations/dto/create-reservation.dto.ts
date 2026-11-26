@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDateString,
+  IsEmail,
   IsInt,
   IsOptional,
   IsString,
@@ -36,4 +37,42 @@ export class CreateReservationDto {
   @IsOptional()
   @IsString()
   vehiclePlateNumber?: string | null;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Nombre del cliente (uso de personal/admin)',
+    example: 'Juan Pérez',
+  })
+  @IsOptional()
+  @IsString()
+  clientName?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Correo del cliente (uso de personal/admin)',
+    example: 'cliente@correo.com',
+  })
+  @IsOptional()
+  @IsEmail()
+  clientEmail?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Teléfono del cliente (uso de personal/admin)',
+    example: '8095551234',
+  })
+  @IsOptional()
+  @IsString()
+  clientPhone?: string;
+
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 1,
+    description: 'ID de usuario existente (uso de personal/admin)',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  userId?: number;
 }

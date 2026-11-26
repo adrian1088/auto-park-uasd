@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { MailModule } from '../mail/mail.module';
 import { ReservationsService } from './reservations.service';
 import { ReservationsController } from './reservations.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -9,7 +10,7 @@ import { VehicleEntity } from '../vehicles/entities/vehicle.entity';
 import { TicketEntity } from '../tickets/entities/ticket.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ReservationEntity, UserEntity, ParkingSpace, VehicleEntity, TicketEntity])],
+  imports: [MailModule, TypeOrmModule.forFeature([ReservationEntity, UserEntity, ParkingSpace, VehicleEntity, TicketEntity])],
   controllers: [ReservationsController],
   providers: [ReservationsService],
 })

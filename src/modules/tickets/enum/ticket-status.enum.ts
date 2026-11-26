@@ -4,3 +4,4 @@ export enum TicketStatus {
   CANCELLED = 'CANCELLED',
   COMPLETED = 'COMPLETED' // Cuando cliente llega a la salida y se completa el ticket
 }
+

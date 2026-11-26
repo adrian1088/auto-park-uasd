@@ -14,10 +14,10 @@ import { VehicleEntity } from './entities/vehicle.entity';
 @Injectable()
 export class VehiclesService {
   constructor(
-    @InjectRepository(VehicleEntity)
-    private readonly vehiclesRepository: Repository<VehicleEntity>,
     @InjectRepository(UserEntity)
     private readonly usersRepository: Repository<UserEntity>,
+    @InjectRepository(VehicleEntity)
+    private readonly vehiclesRepository: Repository<VehicleEntity>,
   ) {}
 
   async create(createVehicleDto: CreateVehicleDto): Promise<VehicleEntity> {

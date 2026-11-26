@@ -15,6 +15,7 @@ import { ParkingModule } from './modules/parking/parking.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { RatesModule } from './modules/rates/rates.module';
 import { HealthModule } from './health/health.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import corsConfig from './config/cors.config';
 // import { IdentityModule } from './modules/identity/identity.module';
 import mailConfig from './config/mail.config';
@@ -54,6 +55,7 @@ import { TokensModule } from './modules/tokens/tokens.module';
     MailerModule,
     MailModule,
     TokensModule,
+    SubscriptionsModule,
   ],
   controllers: [],
   providers: [],

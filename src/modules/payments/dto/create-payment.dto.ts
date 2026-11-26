@@ -11,11 +11,12 @@ import {
 import { PaymentMethod } from '../enum/payment-method.enum';
 
 export class CreatePaymentDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: Number,
     minimum: 1,
     example: 1,
   })
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

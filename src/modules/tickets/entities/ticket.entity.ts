@@ -1,7 +1,13 @@
-import { Column, OneToOne, Entity, ManyToOne, JoinColumn, BeforeInsert } from 'typeorm';
+import {
+  Column,
+  OneToOne,
+  Entity,
+  ManyToOne,
+  JoinColumn,
+  BeforeInsert,
+} from 'typeorm';
 import { TicketStatus } from '../enum/ticket-status.enum';
 import { AuditEntity } from '../../../shared/base/audit.entity';
-import { VehicleEntity } from '../../vehicles/entities/vehicle.entity';
 import { UserEntity } from '../../users/entities/users.entity';
 import { ParkingSpace } from '../../parking/entities/parking-space.entity';
 import { ReservationEntity } from '../../reservations/entities/reservation.entity';
@@ -18,12 +24,12 @@ export class TicketEntity extends AuditEntity {
     comment: 'Ticket code',
   })
   code: string;
-  
+
   @BeforeInsert()
   generateCode() {
     this.code = `TCK-${new Date().getFullYear()}-${randomUUID()}`;
   }
-  
+
   @Column({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
@@ -58,10 +64,10 @@ export class TicketEntity extends AuditEntity {
   vehiclePlateNumber: string;
 
   @ManyToOne(() => UserEntity, (user) => user.tickets)
-  user: UserEntity | null; // Muchos tickets pueden pertenecer a un solo usuario
+  user: UserEntity | null;
 
   @ManyToOne(() => ParkingSpace, (spot) => spot.tickets)
-  spot: ParkingSpace; // Muchos tickets pueden pertenecer a un solo espacio de estacionamiento
+  spot: ParkingSpace;
 
   @OneToOne(() => ReservationEntity, (reservation) => reservation.ticket, {
     nullable: true,
@@ -76,6 +82,6 @@ export class TicketEntity extends AuditEntity {
   })
   rate: RateEntity | null;
 
-  @OneToOne(() => Payment, (payment) => payment.ticket)
+  @OneToOne(() => Payment, (payment) => payment.ticket, { nullable: true })
   payment: Payment | null;
 }

@@ -7,6 +7,7 @@ import { PasswordResetTokenEntity } from '../../tokens/entities/password-reset-t
 import { UserEntity } from '../../users/entities/users.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserStatus } from '../../users/enums/users-status.enum';
+import { PasswordHasherService } from '../../../shared/password-hasher/password-hasher.service';
 
 @Injectable()
 export class PasswordResetService {
@@ -16,6 +17,7 @@ export class PasswordResetService {
     @InjectRepository(PasswordResetTokenEntity)
     private readonly passwordResetRepository: Repository<PasswordResetTokenEntity>,
     private readonly mailService: MailService,
+    private readonly passwordHasherService: PasswordHasherService,
   ) {}
 
   async request(email: string) {
@@ -74,7 +76,7 @@ export class PasswordResetService {
     if (!user) {
       throw new NotFoundException('Usuario no encontrado');
     }
-    user.password = newPassword;
+    user.password = await this.passwordHasherService.hash(newPassword);
     await this.userRepository.save(user);
 
     // 3. Invalidar token de restablecimiento de contraseña después de usarlo

@@ -32,10 +32,14 @@ export class Payment extends AuditEntity {
   })
   transactionReference: string | null;
 
-  @Column({ type: 'int', nullable: true, comment: 'User ID associated with the payment' })
+  @Column({
+    type: 'int',
+    nullable: true,
+    comment: 'User ID associated with the payment',
+  })
   userId: number | null;
 
-  @ManyToOne(() => UserEntity, (user) => user.payments)
+  @ManyToOne(() => UserEntity, (user) => user.payments, { nullable: true })
   user: UserEntity | null;
 
   @OneToOne(() => TicketEntity, (ticket) => ticket.payment, {
@@ -43,5 +47,5 @@ export class Payment extends AuditEntity {
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'ticket_id' })
-  ticket: TicketEntity;
+  ticket: TicketEntity | null;
 }
